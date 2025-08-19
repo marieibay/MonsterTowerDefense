@@ -89,7 +89,10 @@ const SelectionDetails: React.FC<{
     }
     
     return (
-        <div className="relative w-[450px] h-36 flex items-center p-2 rounded-lg gap-3 pointer-events-auto">
+        <div 
+            className="relative w-[450px] h-36 flex items-center p-2 rounded-lg gap-3 pointer-events-auto"
+            onMouseDown={(e) => e.stopPropagation()}
+        >
              <UIPanel className="absolute inset-0 w-full h-full" />
              <div className="relative z-10 w-28 h-28 bg-gray-900 rounded-md overflow-hidden border-2 border-gray-500 flex-shrink-0">
                 {getUnitPortrait(unit)}

@@ -31,17 +31,17 @@ export const MAP_PATH: Vector2D[] = [
 
 export const HERO_START_GRID_POS: Vector2D = MAP_PATH[2]; // Use a point that's visible on screen
 
-// Tower spots moved closer to the path and increased in number for more strategic options.
+// Tower spots adjusted to be closer to the path for optimal engagement.
 export const TOWER_SPOTS: Vector2D[] = [
-  { x: -4, y: 11 },
-  { x: 2, y: 15 },
-  { x: 5, y: 21 },
-  { x: 10, y: 12 },
-  { x: 14, y: 22 },
-  { x: 18, y: 18 },
+  { x: -4, y: 12 },
+  { x: 2, y: 17 },
+  { x: 6, y: 20 },
+  { x: 10, y: 13 },
+  { x: 15, y: 22 },
+  { x: 18, y: 19 },
   { x: 24, y: 13 },
-  { x: 28, y: 20 },
-  { x: 35, y: 13 },
+  { x: 29, y: 20 },
+  { x: 36, y: 13 },
 ];
 
 interface TowerLevelStats {
