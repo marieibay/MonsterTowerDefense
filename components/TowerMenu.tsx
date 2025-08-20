@@ -63,7 +63,7 @@ export const TowerMenu: React.FC<TowerMenuProps> = ({ position, onBuild, onClose
                             <div className="w-10 h-10 flex items-center justify-center">
                                 <Icon level={1}/>
                             </div>
-                            <div className={`flex items-center text-lg mt-1 ${canAfford ? 'text-yellow-400' : 'text-gray-500'}`} style={{textShadow: '1px 1px #000'}}>
+                            <div className={`flex items-center text-sm mt-1 ${canAfford ? 'text-yellow-400' : 'text-gray-500'}`} style={{textShadow: '1px 1px #000'}}>
                                 <CoinIcon className="w-4 h-4 mr-1" />
                                 {stats.cost}
                             </div>

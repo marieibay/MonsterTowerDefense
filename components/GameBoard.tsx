@@ -56,8 +56,8 @@ const EnemyComponent: React.FC<{ enemy: Enemy; onSelect: (e: Enemy) => void }> =
       }}
       onMouseDown={(e) => { e.stopPropagation(); onSelect(enemy); }}
     >
-      <EnemyIcon type={enemy.type} isDamaged={healthPercentage < 50}/>
-      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+      <EnemyIcon type={enemy.type} isAttacking={enemy.isAttacking}/>
+      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-black rounded-full overflow-hidden border border-gray-600">
         <div className="h-full bg-red-500 rounded-full" style={{ width: `${healthPercentage}%` }} />
       </div>
     </div>
@@ -120,8 +120,8 @@ const SoldierComponent: React.FC<{ soldier: Soldier; onSelect: (s: Soldier) => v
       onMouseDown={(e) => { e.stopPropagation(); onSelect(soldier); }}
     >
         {soldier.isBuffed && <BuffEffect />}
-        <SoldierIcon isFighting={!!soldier.targetId} />
-        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-6 h-1 bg-gray-700 rounded-full overflow-hidden">
+        <SoldierIcon isAttacking={soldier.isAttacking} />
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-6 h-1 bg-black rounded-full overflow-hidden border border-gray-500">
             <div className="h-full bg-blue-500 rounded-full" style={{ width: `${healthPercentage}%` }} />
         </div>
     </div>
@@ -143,8 +143,8 @@ const ReinforcementComponent: React.FC<{ reinforcement: Reinforcement }> = React
           }}
         >
             {reinforcement.isBuffed && <BuffEffect />}
-            <MilitiaIcon isFighting={!!reinforcement.targetId} />
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-6 h-1 bg-gray-700 rounded-full overflow-hidden">
+            <MilitiaIcon isAttacking={reinforcement.isAttacking} />
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-6 h-1 bg-black rounded-full overflow-hidden border border-gray-500">
                 <div className="h-full bg-green-400 rounded-full" style={{ width: `${healthPercentage}%` }} />
             </div>
         </div>
@@ -180,7 +180,7 @@ const HeroComponent: React.FC<{ hero: Hero, onSelect: (h: Hero) => void }> = Rea
         >
             {isAbilityActive && <BuffEffect size={80}/>}
             <HeroIcon isAttacking={!!hero.isAttacking} />
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-10 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-10 h-1.5 bg-black rounded-full overflow-hidden border border-gray-500">
                 <div className="h-full bg-green-500 rounded-full" style={{ width: `${healthPercentage}%` }} />
             </div>
         </div>

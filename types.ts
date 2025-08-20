@@ -38,7 +38,7 @@ export interface Enemy {
   maxHealth: number;
   pathIndex: number;
   attackCooldown?: number;
-  targetHero?: boolean;
+  isAttacking?: boolean;
   armorType: ArmorType;
   armorValue: number; // e.g., 0.3 for 30% reduction
 }
@@ -69,6 +69,7 @@ export interface Soldier {
     targetId: number | null;
     respawnTimer: number; // in ms
     isBuffed?: boolean;
+    isAttacking?: boolean;
 }
 
 export interface Hero {
@@ -97,6 +98,7 @@ export interface Reinforcement {
     attackCooldown: number;
     lifetime: number; // in ms
     isBuffed?: boolean;
+    isAttacking?: boolean;
 }
 
 export interface Explosion {

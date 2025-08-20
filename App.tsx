@@ -75,8 +75,7 @@ const App: React.FC = () => {
   const [scale, setScale] = useState(1);
   
   const containerRef = useRef<HTMLDivElement>(null);
-  const towerAttackAnimationTimers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
-  const heroAttackAnimationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const animationTimers = useRef<Map<string | number, ReturnType<typeof setTimeout>>>(new Map());
   const waveTimerInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const audioManager = useMemo(() => new AudioManager(), []);
@@ -124,12 +123,14 @@ const App: React.FC = () => {
   };
 
   const handleSelectUnit = useCallback((unit: SelectableUnit) => {
+    audioManager.playSound('uiClick');
     setSelectedUnit(unit);
     setSelectedSpot(null);
     setActiveSpell(null);
-  }, []);
+  }, [audioManager]);
 
   const resetGame = useCallback(() => {
+    audioManager.playSound('uiClick');
     setGameStatus('IDLE');
     setStats({ gold: GAME_CONFIG.startingGold, lives: GAME_CONFIG.startingLives });
     setCurrentWave(0);
@@ -171,14 +172,14 @@ const App: React.FC = () => {
   
     useEffect(() => {
     return () => {
-      towerAttackAnimationTimers.current.forEach(timer => clearTimeout(timer));
-      if (heroAttackAnimationTimer.current) clearTimeout(heroAttackAnimationTimer.current);
+      animationTimers.current.forEach(timer => clearTimeout(timer));
       if (waveTimerInterval.current) clearInterval(waveTimerInterval.current);
     };
   }, []);
 
   const startNextWave = useCallback(() => {
     if (gameStatus !== 'IDLE' && gameStatus !== 'WAVE_COMPLETE') return;
+    audioManager.playSound('waveStart');
     if(waveTimerInterval.current) clearInterval(waveTimerInterval.current);
     setNextWaveTimer(0);
     waveSpawnData.current = { spawnIndex: 0, lastSpawnTime: Date.now() };
@@ -203,6 +204,7 @@ const App: React.FC = () => {
   }, [startNextWave]);
 
   const handleSpotClick = useCallback((spot: Vector2D) => {
+    audioManager.playSound('uiClick');
     const existingTower = towers.find(t => t.position.x === spot.x && t.position.y === spot.y);
     if (existingTower) {
       handleSelectUnit(existingTower);
@@ -211,7 +213,7 @@ const App: React.FC = () => {
       setSelectedUnit(null);
       setActiveSpell(null);
     }
-  }, [towers, handleSelectUnit]);
+  }, [towers, handleSelectUnit, audioManager]);
 
   const handleBuildTower = useCallback((towerType: TowerType) => {
     if (!selectedSpot) return;
@@ -255,6 +257,7 @@ const App: React.FC = () => {
                   attackCooldown: 0,
                   targetId: null,
                   respawnTimer: 0,
+                  isAttacking: false,
               });
           }
           setSoldiers(prev => [...prev, ...newSoldiers]);
@@ -280,6 +283,7 @@ const App: React.FC = () => {
   }, [stats.gold, audioManager]);
 
   const handleSellTower = useCallback((towerId: number) => {
+    audioManager.playSound('uiClick');
     const towerToSell = towers.find(t => t.id === towerId);
     if (!towerToSell) return;
 
@@ -290,15 +294,16 @@ const App: React.FC = () => {
       setSoldiers(prev => prev.filter(s => s.barracksId !== towerId));
     }
     deselectAll();
-  }, [towers]);
+  }, [towers, audioManager]);
   
   const handleCastSpell = useCallback((spell: PlayerSpell) => {
       if (spellCooldowns[spell] <= 0) {
+          audioManager.playSound('uiClick');
           setActiveSpell(spell);
           setSelectedUnit(null);
           setSelectedSpot(null);
       }
-  }, [spellCooldowns]);
+  }, [spellCooldowns, audioManager]);
 
   const handleHeroAbility = useCallback(() => {
     setHero(h => {
@@ -407,6 +412,7 @@ const App: React.FC = () => {
                       targetId: null,
                       attackCooldown: 0,
                       lifetime: REINFORCEMENTS_STATS.duration,
+                      isAttacking: false,
                   });
               }
               setReinforcements(r => [...r, ...newReinforcements]);
@@ -443,6 +449,22 @@ const App: React.FC = () => {
   const cancelRallyPointDrag = useCallback(() => {
     setRallyPointDrag(null);
   }, []);
+  
+  const setAttackingState = (unitId: number | string, isAttacking: boolean, duration: number) => {
+     const timerKey = `${unitId}`;
+     const existingTimer = animationTimers.current.get(timerKey);
+     if(existingTimer) clearTimeout(existingTimer);
+
+     const newTimer = setTimeout(() => {
+         setEnemies(prev => prev.map(u => u.id === unitId ? { ...u, isAttacking: false } : u));
+         setTowers(prev => prev.map(u => u.id === unitId ? { ...u, isAttacking: false } : u));
+         setSoldiers(prev => prev.map(u => u.id === unitId ? { ...u, isAttacking: false } : u));
+         setReinforcements(prev => prev.map(u => u.id === unitId ? { ...u, isAttacking: false } : u));
+         setHero(h => h.id === unitId ? { ...h, isAttacking: false } : h);
+         animationTimers.current.delete(timerKey);
+     }, duration);
+     animationTimers.current.set(timerKey, newTimer);
+  };
 
   useEffect(() => {
     if (gameStatus !== 'WAVE_IN_PROGRESS' || isPaused) return;
@@ -508,6 +530,7 @@ const App: React.FC = () => {
                   armorType: enemyStats.armorType,
                   armorValue: enemyStats.armorValue,
                   attackCooldown: 0,
+                  isAttacking: false,
               };
               currentEnemies.push(newEnemy);
               waveSpawnData.current.spawnIndex++;
@@ -563,16 +586,9 @@ const App: React.FC = () => {
                 }
                 currentHero.attackCooldown = HERO_STATS.attackRate;
                 currentHero.isAttacking = true;
-                if (heroAttackAnimationTimer.current) clearTimeout(heroAttackAnimationTimer.current);
-                heroAttackAnimationTimer.current = setTimeout(() => {
-                    setHero(h => ({ ...h, isAttacking: false }));
-                    heroAttackAnimationTimer.current = null;
-                }, 300);
-            } else {
-                currentHero.isAttacking = false;
+                setAttackingState(currentHero.id, true, 300);
             }
         } else {
-            currentHero.isAttacking = false;
             const distanceToRally = getDistance(currentHero.position, currentHero.rallyPoint);
             if (distanceToRally > 5) {
                 const moveDistance = HERO_STATS.speed * timeDelta;
@@ -619,13 +635,8 @@ const App: React.FC = () => {
                 damage: towerLevelStats.damage, damageType: towerLevelStats.damageType, speed: towerLevelStats.projectileSpeed,
                 splashRadius: towerLevelStats.splashRadius
               });
-              const existingTimer = towerAttackAnimationTimers.current.get(tower.id);
-              if (existingTimer) clearTimeout(existingTimer);
-              const newTimer = setTimeout(() => {
-                setTowers(prev => prev.map(t => t.id === tower.id ? { ...t, isAttacking: false } : t));
-                towerAttackAnimationTimers.current.delete(tower.id);
-              }, 300);
-              towerAttackAnimationTimers.current.set(tower.id, newTimer);
+              
+              setAttackingState(tower.id, true, 300);
               return { ...tower, cooldown: towerLevelStats.fireRate, targetId: newTargetId, isAttacking: true };
             }
           }
@@ -636,10 +647,10 @@ const App: React.FC = () => {
       currentSoldiers = currentSoldiers.map(soldier => {
         if (soldier.respawnTimer > 0) {
             const newRespawnTimer = Math.max(0, soldier.respawnTimer - msPerFrame);
-            if (newRespawnTimer <= 0) return { ...soldier, health: soldier.maxHealth, position: { ...soldier.rallyPoint! }, respawnTimer: 0 };
+            if (newRespawnTimer <= 0) return { ...soldier, health: soldier.maxHealth, position: { ...soldier.rallyPoint! }, respawnTimer: 0, isAttacking: false };
             return { ...soldier, respawnTimer: newRespawnTimer };
         }
-        if (soldier.health <= 0) return { ...soldier, respawnTimer: SOLDIER_STATS.respawnTime, targetId: null };
+        if (soldier.health <= 0) return { ...soldier, respawnTimer: SOLDIER_STATS.respawnTime, targetId: null, isAttacking: false };
         const isBuffed = isHeroAbilityActive && getDistance(soldier.position, currentHero.position) < HERO_STATS.abilityRange;
         let newTargetId = soldier.targetId;
         const newAttackCooldown = Math.max(0, soldier.attackCooldown - msPerFrame);
@@ -670,7 +681,8 @@ const App: React.FC = () => {
                     if(enemy.armorType === 'PHYSICAL') damage *= (1 - enemy.armorValue);
                     currentEnemies[targetIndex] = { ...enemy, health: enemy.health - damage };
                 }
-                return { ...soldier, attackCooldown: SOLDIER_STATS.attackRate, targetId: newTargetId, isBuffed };
+                setAttackingState(soldier.id, true, 300);
+                return { ...soldier, attackCooldown: SOLDIER_STATS.attackRate, targetId: newTargetId, isBuffed, isAttacking: true };
             }
         } else {
             const distanceToRally = getDistance(soldier.position, soldier.rallyPoint!);
@@ -711,7 +723,8 @@ const App: React.FC = () => {
                       if(enemy.armorType === 'PHYSICAL') damage *= (1 - enemy.armorValue);
                       currentEnemies[targetIndex] = {...enemy, health: enemy.health - damage };
                   }
-                  return { ...r, attackCooldown: REINFORCEMENTS_STATS.attackRate, targetId: newTargetId, isBuffed };
+                  setAttackingState(r.id, true, 300);
+                  return { ...r, attackCooldown: REINFORCEMENTS_STATS.attackRate, targetId: newTargetId, isBuffed, isAttacking: true };
               }
           }
           return {...r, lifetime: r.lifetime - msPerFrame, attackCooldown: newAttackCooldown, targetId: newTargetId, isBuffed};
@@ -783,6 +796,7 @@ const App: React.FC = () => {
         const newAttackCooldown = Math.max(0, (enemy.attackCooldown || 0) - msPerFrame);
         if (isBlocked && blocker && blockerType) {
             if (newAttackCooldown <= 0) {
+                audioManager.playSound('enemyAttack');
                 if (blockerType === 'hero') {
                     currentHero.health = Math.max(0, currentHero.health - enemyStats.damage);
                     if (currentHero.health <= 0) currentHero.respawnTimer = HERO_STATS.respawnTime;
@@ -793,7 +807,8 @@ const App: React.FC = () => {
                     const reinforcementIndex = currentReinforcements.findIndex(s => s.id === blocker!.id);
                     if (reinforcementIndex !== -1) currentReinforcements[reinforcementIndex].health = Math.max(0, currentReinforcements[reinforcementIndex].health - enemyStats.damage);
                 }
-                return { ...enemy, attackCooldown: enemyStats.attackRate };
+                setAttackingState(enemy.id, true, 300);
+                return { ...enemy, attackCooldown: enemyStats.attackRate, isAttacking: true };
             }
             return { ...enemy, attackCooldown: newAttackCooldown };
         } else {
@@ -899,7 +914,7 @@ const App: React.FC = () => {
   }, [gameStatus, isPaused, currentWave, enemies, towers, projectiles, soldiers, hero, reinforcements, audioManager, selectedUnit, startNextWave]);
 
   return (
-    <div ref={containerRef} className="w-full h-full flex items-center justify-center font-['Bangers'] tracking-wider">
+    <div ref={containerRef} className="w-full h-full flex items-center justify-center">
       <div 
         className="relative bg-gray-800 shadow-2xl overflow-hidden"
         style={{
@@ -943,9 +958,15 @@ const App: React.FC = () => {
           onStartWave={handleStartWave}
           nextWaveTimer={nextWaveTimer}
           isMuted={isMuted}
-          onToggleMute={() => setIsMuted(prev => !prev)}
+          onToggleMute={() => {
+              audioManager.playSound('uiClick');
+              setIsMuted(prev => !prev);
+          }}
           isPaused={isPaused}
-          onTogglePause={() => setIsPaused(p => !p)}
+          onTogglePause={() => {
+              audioManager.playSound('uiClick');
+              setIsPaused(p => !p);
+          }}
           selectedUnit={selectedUnit}
           onUpgradeTower={handleUpgradeTower}
           onSellTower={handleSellTower}
