@@ -2,10 +2,10 @@ import React from 'react';
 import type { Vector2D, TowerType } from '../types';
 import { TOWER_STATS } from '../constants';
 import { 
-    ArcherTowerIcon, 
-    MageTowerIcon, 
-    BarracksTowerIcon,
-    ArtilleryTowerIcon,
+    WinterfellWatchtowerIcon,
+    WeirwoodGroveIcon,
+    NorthernBarracksIcon,
+    SiegeWorkshopIcon,
     CoinIcon, 
     UIPanel
 } from './icons';
@@ -18,20 +18,21 @@ interface TowerMenuProps {
 }
 
 const towerOptions: { type: TowerType; icon: React.FC<any> }[] = [
-    { type: 'ARCHER', icon: ArcherTowerIcon },
-    { type: 'MAGE', icon: MageTowerIcon },
-    { type: 'BARRACKS', icon: BarracksTowerIcon },
-    { type: 'ARTILLERY', icon: ArtilleryTowerIcon },
+    { type: 'WINTERFELL_WATCHTOWER', icon: WinterfellWatchtowerIcon },
+    { type: 'WEIRWOOD_GROVE', icon: WeirwoodGroveIcon },
+    { type: 'NORTHERN_BARRACKS', icon: NorthernBarracksIcon },
+    { type: 'SIEGE_WORKSHOP', icon: SiegeWorkshopIcon },
 ];
 
 export const TowerMenu: React.FC<TowerMenuProps> = ({ position, onBuild, onClose, gold }) => {
   const radius = 100; 
-  const buttonSize = 80;
+  const buttonSize = 90;
 
   return (
     <div
       className="absolute inset-0 z-50"
       onMouseDown={onClose} 
+      onTouchStart={onClose}
     >
         <div className="relative" style={{left: position.x, top: position.y - 30}}>
             {towerOptions.map((option, index) => {
@@ -46,6 +47,10 @@ export const TowerMenu: React.FC<TowerMenuProps> = ({ position, onBuild, onClose
                     <button
                         key={option.type}
                         onMouseDown={(e) => {
+                            e.stopPropagation();
+                            if(canAfford) onBuild(option.type);
+                        }}
+                        onTouchStart={(e) => {
                             e.stopPropagation();
                             if(canAfford) onBuild(option.type);
                         }}

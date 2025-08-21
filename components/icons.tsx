@@ -1,16 +1,15 @@
-
 import React from 'react';
 import type { Vector2D, PlayerSpell, EnemyType } from '../types';
 import { RAIN_OF_FIRE_STATS, MAP_PATH, GAME_CONFIG } from '../constants';
 import { gameToScreen } from '../utils';
 
 // Helper for creating pixel art with rects
-const P: React.FC<{ C: string; X: number; Y: number; S?: number }> = ({ C, X, Y, S = 1 }) => (
-  <rect fill={C} x={X} y={Y} width={S} height={S} />
+const P: React.FC<{ C: string; X: number; Y: number; S?: number; W?: number; H?: number }> = ({ C, X, Y, S = 1, W, H }) => (
+  <rect fill={C} x={X} y={Y} width={W ?? S} height={H ?? S} />
 );
 
 // ===================================================================================
-// UI Elements (16-bit style)
+// UI Elements
 // ===================================================================================
 
 const PixelBorder: React.FC<{ width: number; height: number }> = ({ width, height }) => (
@@ -24,14 +23,14 @@ const PixelBorder: React.FC<{ width: number; height: number }> = ({ width, heigh
 
 export const UIPanel: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg {...props} viewBox="0 0 100 50" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="50" fill="#6586c5" />
+    <rect width="100" height="50" fill="#455a64" />
     <PixelBorder width={100} height={50} />
   </svg>
 );
 
 export const UIButton: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg {...props} viewBox="0 0 100 50" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="50" fill="#6586c5" />
+    <rect width="100" height="50" fill="#607d8b" />
     <PixelBorder width={100} height={50} />
   </svg>
 );
@@ -68,17 +67,7 @@ export const UpgradeIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
 export const SellIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-12h2v6h-2V8zm0 8h2v-2h-2v2z"/></svg>);
 export const ReinforcementsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V18h14v-1.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V18h6v-1.5c0-2.33-4.67-3.5-7-3.5z"/></svg>);
 export const RainOfFireIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-7.5 16.5A10 10 0 0 0 12 22a10 10 0 0 0 7.5-3.5A10 10 0 0 0 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="m14.47 13.5-1.41-1.41L15 10.17l-1.91-1.91-1.41 1.41-2.12-2.12 1.41-1.41L12.87 5.5 15 3.38l2.12 2.12-1.41 1.41L17.62 9l1.41-1.41L21.15 9.7l-2.12 2.12-1.41-1.41L15.71 12l1.91 1.91-2.15 2.15zM8.5 14.5l-1-1L9.41 11.5l-1.91-1.91-1 1-2.12-2.12 1-1L7.29 5.5 9.5 3.38l2.12 2.12-1 1L8.71 8.41l1.91 1.91-2.12 2.13z"/></svg>);
-export const HeroAbilityIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L9 4h6l-3-3zM3 5v2h18V5H3zm2 4l-2 8h2.5l.75-2h3.5l.75 2H13l-2-8H9zm1.5 4.5L11.25 10h.5l.75 3.5h-2zM15 9l-2 8h2.5l.75-2h3.5l.75 2H23l-2-8h-2zm1.5 4.5l.75-3.5h.5l.75 3.5h-2z"/></svg>);
-
-// Portraits
-export { ArcherTowerIcon as ArcherTowerPortrait } from './icons';
-export { MageTowerIcon as MageTowerPortrait } from './icons';
-export { BarracksTowerIcon as BarracksTowerPortrait } from './icons';
-export { ArtilleryTowerIcon as ArtilleryTowerPortrait } from './icons';
-export { SoldierIcon as SoldierPortrait } from './icons';
-export { HeroIcon as HeroPortrait } from './icons';
-export { EnemyIcon as EnemyPortrait } from './icons';
-
+export const OathkeeperStandIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>);
 
 // Game Board Elements
 export const GameBackground: React.FC<React.SVGProps<HTMLDivElement>> = (props) => {
@@ -88,16 +77,29 @@ export const GameBackground: React.FC<React.SVGProps<HTMLDivElement>> = (props) 
     return (
         <div {...props}>
              <svg width={GAME_CONFIG.width} height={GAME_CONFIG.height} className="absolute inset-0">
-                <rect width="100%" height="100%" fill="#6586c5" />
-                <rect width="100%" height="45%" fill="#81d4fa" />
-                 {/* Mountains */}
-                <path d="M 0 440 L 200 300 L 400 440 Z" fill="#c2c2c2"/>
-                <path d="M 300 440 L 550 250 L 800 440 Z" fill="#a2a2a2"/>
-                <path d="M 1100 440 L 1400 200 L 1700 440 Z" fill="#c2c2c2"/>
-                <path d="M 1600 440 L 1800 350 L 2000 440 Z" fill="#a2a2a2"/>
+                <defs>
+                    <filter id="noise">
+                        <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/>
+                    </filter>
+                    <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style={{stopColor: '#607d8b', stopOpacity: 1}} />
+                        <stop offset="50%" style={{stopColor: '#90a4ae', stopOpacity: 1}} />
+                    </linearGradient>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#skyGradient)" />
+                <rect y="440" width="100%" height="100%" fill="#616161" />
+                <rect y="440" width="100%" height="100%" fill="url(#noise)" opacity="0.05" />
+
+                <path d="M 0 440 C 300 480, 600 420, 900 450 S 1500 500, 1920 460 V 880 H 0 Z" fill="#eeeeee" />
+                <path d="M 0 440 C 300 480, 600 420, 900 450 S 1500 500, 1920 460 V 880 H 0 Z" fill="url(#noise)" opacity="0.1" />
+
+                <path d="M -100 440 L 200 250 L 500 440 Z" fill="#90a4ae"/>
+                <path d="M 100 440 L 250 200 L 400 440 Z" fill="#cfd8dc"/>
+                <path d="M 1300 440 L 1600 150 L 1900 440 Z" fill="#90a4ae"/>
+                <path d="M 1500 440 L 1750 250 L 2000 440 Z" fill="#cfd8dc"/>
                 
-                <path d={pathString} fill="none" stroke="#dcb46a" strokeWidth="70" strokeLinejoin="round" strokeLinecap="round" />
-                <path d={pathString} fill="none" stroke="#b98a3e" strokeWidth="60" strokeLinejoin="round" strokeLinecap="round" />
+                <path d={pathString} fill="none" stroke="#a1887f" strokeWidth="70" strokeLinejoin="round" strokeLinecap="round" />
+                <path d={pathString} fill="none" stroke="#8d6e63" strokeWidth="60" strokeLinejoin="round" strokeLinecap="round" />
             </svg>
         </div>
     )
@@ -105,15 +107,41 @@ export const GameBackground: React.FC<React.SVGProps<HTMLDivElement>> = (props) 
 
 export const TowerSpotIcon: React.FC<{ isOccupied: boolean }> = ({ isOccupied }) => (
     <svg className="w-24 h-12" viewBox="0 0 100 50">
-        <ellipse cx="50" cy="25" rx="48" ry="24" fill={isOccupied ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.2)"} stroke={isOccupied ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.5)"} strokeWidth="2" strokeDasharray="5 5"/>
+        <style>{`
+            @keyframes pulse-rune {
+                0%, 100% { opacity: 0.6; }
+                50% { opacity: 1; }
+            }
+            .pulsing-rune {
+                animation: pulse-rune 3s infinite ease-in-out;
+            }
+        `}</style>
+         <defs>
+            <filter id="rune-glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                <feMerge>
+                    <feMergeNode in="coloredBlur" />
+                    <feMergeNode in="SourceGraphic" />
+                </feMerge>
+            </filter>
+        </defs>
+        <g className={isOccupied ? 'opacity-10' : 'pulsing-rune'} filter="url(#rune-glow)">
+            <ellipse cx="50" cy="25" rx="40" ry="20" fill="none" stroke="#4dd0e1" strokeWidth="2" />
+            <text x="50" y="30" fontFamily="serif" fontSize="24" fill="#4dd0e1" textAnchor="middle" >ᛒ</text>
+        </g>
     </svg>
 );
 
 export const SelectionCircle: React.FC<{ position: Vector2D }> = ({ position }) => (
     <div className="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ left: position.x, top: position.y + 40, zIndex: 1 }}>
         <svg width="120" height="60" viewBox="0 0 120 60">
-            <ellipse cx="60" cy="30" rx="55" ry="28" fill="none" stroke="#FFF" strokeWidth="2">
-                <animate attributeName="stroke-dasharray" values="0,10;5,5;10,0" dur="0.5s" repeatCount="indefinite" />
+             <defs>
+                <filter id="selection-glow">
+                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                </filter>
+            </defs>
+            <ellipse cx="60" cy="30" rx="55" ry="28" fill="none" stroke="#FFF" strokeWidth="2" filter="url(#selection-glow)">
+                <animateTransform attributeName="transform" type="rotate" from="0 60 30" to="360 60 30" dur="4s" repeatCount="indefinite" />
             </ellipse>
         </svg>
     </div>
@@ -125,7 +153,7 @@ export const RallyPointRangeCircle: React.FC<{ position: Vector2D, range: number
     return (
         <div className="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ left: position.x, top: position.y, zIndex: 1 }}>
             <svg width={diameter} height={height} viewBox={`0 0 ${diameter} ${height}`}>
-                <ellipse cx={range} cy={height / 2} rx={range - 2} ry={(height / 2) - 2} fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2" strokeDasharray="5,5" />
+                <ellipse cx={range} cy={height / 2} rx={range - 2} ry={(height / 2) - 2} fill="rgba(207, 216, 220, 0.1)" stroke="#eceff1" strokeWidth="2" strokeDasharray="5,5" />
             </svg>
         </div>
     );
@@ -133,137 +161,229 @@ export const RallyPointRangeCircle: React.FC<{ position: Vector2D, range: number
 
 export const RallyPointFlag: React.FC<{ position: Vector2D }> = ({ position }) => (
     <div className="absolute transform -translate-x-1/2 -translate-y-full" style={{ left: position.x, top: position.y, zIndex: Math.floor(position.y) }}>
-        <svg width="20" height="30" viewBox="0 0 20 30">
-            <rect x="1" y="0" width="2" height="30" fill="#6d4c41" />
-            <polygon points="3,2 18,7 3,12" fill="#ef5350"/>
+        <svg width="24" height="36" viewBox="0 0 24 36">
+            <rect x="1" y="0" width="3" height="36" fill="#6d4c41" />
+            <path d="M4 2 L22 6 L4 10 Z" fill="#cfd8dc"/>
+             <path d="M8 5 L10 5 L9 6 L10 7 L8 7 L7 6 Z" fill="#263238" />
         </svg>
     </div>
 );
 
 // ===================================================================================
-// Towers
+// Towers (House Stark) - Redesigned & Animated
 // ===================================================================================
 interface TowerProps extends React.SVGProps<SVGSVGElement> { 
     isAttacking?: boolean; 
     level: number; 
 }
 
-export const ArcherTowerIcon: React.FC<TowerProps> = ({level, isAttacking, ...props}) => (
-    <svg width="64" height="80" viewBox="0 0 32 40" {...props}>
-        <rect x="6" y="12" width="20" height="28" fill="#a1887f" />
-        <rect x="4" y="8" width="24" height="4" fill="#8d6e63" />
-        <rect x="0" y="4" width="32" height="4" fill="#6d4c41" />
-        <rect x={16-level} y={40-level*4} width={level*2} height={level*4} fill="#6d4c41" />
-        {isAttacking && <rect x="15" y="0" width="2" height="8" fill="yellow" />}
-    </svg>
-);
+const towerIdleAnim = `
+    @keyframes tower-idle {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-1px); }
+    }
+    .idle {
+        animation: tower-idle 5s infinite ease-in-out;
+    }
+`;
 
-export const MageTowerIcon: React.FC<TowerProps> = ({level, isAttacking, ...props}) => (
-    <svg width="64" height="80" viewBox="0 0 32 40" {...props}>
-        <path d="M16 40 L8 28 H24 Z" fill="#673ab7"/>
-        <rect x="12" y="20" width="8" height="8" fill="#7e57c2" />
-        <path d="M4 20 L28 20 L20 12 H12 Z" fill="#512da8" />
-        <circle cx="16" cy="8" r={3 + level} fill={isAttacking ? "cyan" : "magenta"} >
-             <animate attributeName="r" values={`${3+level};${4+level};${3+level}`} dur="2s" repeatCount="indefinite" />
-        </circle>
-    </svg>
-);
-
-export const BarracksTowerIcon: React.FC<TowerProps> = ({level, ...props}) => (
-    <svg width="80" height="64" viewBox="0 0 40 32" {...props}>
-        <rect x="2" y="10" width="36" height="22" fill="#8d6e63" />
-        <path d="M0 12 L20 2 L40 12" fill="#a1887f" stroke="#5d4037" strokeWidth="1" />
-        <rect x="15" y="18" width="10" height="14" fill="#6d4c41" />
-        {level >= 2 && <rect x="5" y="14" width="4" height="4" fill="black" />}
-        {level >= 3 && <rect x="31" y="14" width="4" height="4" fill="black" />}
-    </svg>
-);
-
-export const ArtilleryTowerIcon: React.FC<TowerProps> = ({level, isAttacking, ...props}) => (
-    <svg width="80" height="64" viewBox="0 0 40 32" {...props}>
-        <rect x="0" y="24" width="40" height="8" rx="1" fill="#795548"/>
-        <path d="M8 24 L16 4 H24 L32 24" fill="none" stroke="#5d4037" strokeWidth={2 + level}/>
-        <g transform={isAttacking ? 'rotate(-15 14 8)' : 'rotate(-10 14 8)'} style={{transition: 'transform 0.1s'}}>
-          <path d="M14 8 L32 14" stroke="#5d4037" strokeWidth="4" strokeLinecap="round"/>
-          <circle cx="34" cy="13" r="4" fill="#424242"/>
+export const WinterfellWatchtowerIcon: React.FC<TowerProps> = ({level, isAttacking, ...props}) => (
+    <svg width="64" height="96" viewBox="0 0 32 48" {...props}>
+        <style>{`
+            ${towerIdleAnim}
+            @keyframes wave { 0% { d: "M17 22 C 19 21, 23 21, 25 22 L 25 28 C 23 29, 19 29, 17 28 Z"; } 50% { d: "M17 22 C 19 23, 23 23, 25 22 L 25 28 C 23 27, 19 27, 17 28 Z"; } 100% { d: "M17 22 C 19 21, 23 21, 25 22 L 25 28 C 23 29, 19 29, 17 28 Z"; } }
+        `}</style>
+        <g className="idle">
+            <path d="M6 48 L 26 48 L 28 32 L 4 32 Z" fill="#757575" />
+            <path d="M4 32 L 28 32 L 30 16 L 2 16 Z" fill="#9e9e9e" />
+            <rect x="0" y="4" width="32" height="12" fill="#616161" />
+            <rect x="0" y="0" width="4" height="4" fill="#424242"/><rect x="8" y="0" width="4" height="4" fill="#424242"/><rect x="20" y="0" width="4" height="4" fill="#424242"/><rect x="28" y="0" width="4" height="4" fill="#424242"/>
+            <rect x="15" y="18" width="2" height="12" fill="#455a64" />
+            <path fill="#eceff1" style={{ animation: 'wave 3s infinite ease-in-out' }} d="M17 22 C 19 21, 23 21, 25 22 L 25 28 C 23 29, 19 29, 17 28 Z" />
+            <path d="M19 24.5 L 21 23 L 23 24.5 L 21 26 Z" fill="#455a64"/>
+            {level > 1 && <rect x="14" y="14" width="4" height="2" fill="#ffd700" />}
+            {level > 2 && <><rect x="2" y="12" width="28" height="2" fill="#03a9f4" /><rect x="2" y="13" width="28" height="1" fill="#0288d1" /></>}
+            {isAttacking && <circle cx="16" cy="8" r="4" fill="#81d4fa"><animate attributeName="r" values="0;4;0" dur="0.3s" /></circle>}
         </g>
     </svg>
 );
 
-// Units
+export const WeirwoodGroveIcon: React.FC<TowerProps> = ({level, isAttacking, ...props}) => (
+    <svg width="80" height="80" viewBox="0 0 40 40" {...props}>
+        <style>{`
+            @keyframes pulse-glow { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+            @keyframes leaves-rustle { 0%, 100% { transform: skewX(0); } 50% { transform: skewX(2deg); } }
+        `}</style>
+        <g style={{ animation: 'leaves-rustle 4s infinite ease-in-out', transformOrigin: 'center' }}>
+            <circle cx="20" cy="12" r={8 + level*2} fill="#e53935" />
+            <circle cx="12" cy="14" r={4 + level} fill="#f44336" />
+            <circle cx="28" cy="14" r={4 + level} fill="#f44336" />
+        </g>
+        <path d="M20 40 C 16 35, 16 20, 18 15 L 22 15 C 24 20, 24 35, 20 40 Z" fill="#f5f5f5" />
+        <g style={{ animation: 'pulse-glow 2s infinite ease-in-out', filter: 'drop-shadow(0 0 2px #c62828)'}}>
+            <path d="M19 20 L21 20 M18 22 L22 22 M19 24 Q 20 25 21 24" stroke="#c62828" strokeWidth="1" fill="none"/>
+        </g>
+        {isAttacking && <circle cx="20" cy="22" r="4" fill="#ffcdd2"><animate attributeName="r" values="0;4;0" dur="0.4s" /></circle>}
+    </svg>
+);
+
+export const NorthernBarracksIcon: React.FC<TowerProps> = ({level, ...props}) => (
+    <svg width="80" height="64" viewBox="0 0 40 32" {...props}>
+        <style>{towerIdleAnim}</style>
+        <g className="idle">
+            <path d="M0 28 L40 28 L40 32 L0 32 Z" fill="#757575" />
+            <path d="M2 14 L38 14 L38 28 L2 28 Z" fill="#a1887f" />
+            <path d="M0 14 L20 2 L40 14 Z" fill="#6d4c41" />
+            <rect x="17" y="20" width="6" height="8" fill="#5d4037" />
+            {level > 1 && <path d="M28 16 L34 16 L34 22 L28 22 Z" stroke="#f5f5f5" strokeWidth="1" fill="none"/>}
+            {level > 2 && <path d="M4 16 L10 16 L10 22 L4 22 Z" stroke="#f5f5f5" strokeWidth="1" fill="none"/>}
+        </g>
+    </svg>
+);
+
+export const SiegeWorkshopIcon: React.FC<TowerProps> = ({level, isAttacking, ...props}) => (
+    <svg width="80" height="64" viewBox="0 0 40 32" {...props}>
+        <style>{`${towerIdleAnim}`}</style>
+        <g className="idle">
+            <rect x="0" y="26" width="40" height="6" fill="#6d4c41" />
+            <circle cx="8" cy="24" r="6" fill="#5d4037" /><circle cx="32" cy="24" r="6" fill="#5d4037" />
+            <path d="M6 22 L16 4 H24 L34 22" stroke="#6d4c41" strokeWidth="4" fill="none" strokeLinecap="round" />
+            <g transform={isAttacking ? `rotate(-45 20 8)` : `rotate(10 20 8)`} style={{transition: 'transform 0.1s linear'}}>
+                <rect x="8" y="6" width="24" height="4" fill="#8d6e63" />
+                <path d="M28 4 C 34 4, 34 12, 28 12 Z" fill="#a1887f" />
+                <circle cx="30" cy="8" r="3" fill="#9e9e9e" />
+            </g>
+            <rect x="2" y="10" width={8 + level} height={6+level*2} fill="#757575" />
+        </g>
+    </svg>
+);
+
+
+// ===================================================================================
+// Environment
+// ===================================================================================
+export const TreeIcon1: React.FC = () => <svg width="64" height="80" viewBox="0 0 32 40"><path d="M15 40 L17 40 L17 25 L15 25 Z" fill="#5d4037" /><path d="M16 28 C 8 28, 0 20, 16 0 C 32 20, 24 28, 16 28 Z" fill="#2e7d32" /></svg>;
+export const TreeIcon2: React.FC = () => <svg width="64" height="80" viewBox="0 0 32 40"><path d="M15 40 L17 40 L17 30 L15 30 Z" fill="#6d4c41" /><path d="M16 32 C 4 32, 2 15, 16 0 C 30 15, 28 32, 16 32 Z" fill="#388e3c" /></svg>;
+export const RockIcon1: React.FC = () => <svg width="40" height="32" viewBox="0 0 20 16"><path d="M2 14 L 18 14 L 16 6 L 4 6 Z" fill="#9e9e9e" /></svg>;
+export const RockIcon2: React.FC = () => <svg width="40" height="32" viewBox="0 0 20 16"><path d="M1 14 H 19 L 17 8 L 14 4 L 5 8 Z" fill="#bdbdbd" /></svg>;
+
+// ===================================================================================
+// Units - Redesigned & Animated
+// ===================================================================================
 interface UnitProps extends React.SVGProps<SVGSVGElement> { 
     isAttacking?: boolean; 
 }
-export const SoldierIcon: React.FC<UnitProps> = ({ isAttacking, ...props }) => (
+const unitIdleAnim = `
+    @keyframes unit-idle {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-1px); }
+    }
+    .idle {
+        animation: unit-idle 2.5s infinite ease-in-out;
+    }
+`;
+
+export const NorthernSoldierIcon: React.FC<UnitProps> = ({ isAttacking, ...props }) => (
     <svg width="32" height="40" viewBox="0 0 16 20" {...props}>
-        <rect x="5" y="1" width="6" height="6" fill="#c2c2c2"/>
-        <rect x="3" y="7" width="10" height="8" fill="#a2a2a2"/>
-        <rect x="3" y="15" width="4" height="4" fill="#6d4c41" />
-        <rect x="9" y="15" width="4" height="4" fill="#6d4c41" />
-        <g transform={isAttacking ? 'rotate(-60 12 10)' : ''} style={{transition:'transform 0.1s'}}>
-            <rect x="12" y="6" width="2" height="8" fill="#c2c2c2" />
+        <style>{unitIdleAnim}</style>
+        <g className={isAttacking ? '' : 'idle'}>
+            <g transform={isAttacking ? 'translateX(3px)' : ''} style={{transition: 'transform 0.1s'}}>
+                <path d="M4 19 L 7 19 L 7 14 L 4 14 Z" fill="#546e7a" />
+                <path d="M9 19 L 12 19 L 12 14 L 9 14 Z" fill="#546e7a" />
+                <path d="M3 14 L 13 14 L 14 7 L 2 7 Z" fill="#b0bec5"/>
+                <path d="M5 6 L 11 6 L 11 2 L 5 2 Z" fill="#cfd8dc"/>
+                <path d="M6 4 L 10 4 L 10 5 L 6 5 Z" fill="#ffcc80" />
+            </g>
+            <g transform={isAttacking ? 'rotate(-30 14 4)' : 'rotate(-15 14 4)'} style={{transition:'transform 0.1s'}}>
+                <rect x="13" y="0" width="1" height="16" fill="#a1887f"/>
+                <path d="M13 0 L 14 2 L 13 4 Z" fill="#e0e0e0"/>
+            </g>
         </g>
     </svg>
 );
 
-export const HeroIcon: React.FC<UnitProps> = ({ isAttacking, ...props }) => (
-    <svg width="32" height="40" viewBox="0 0 16 20" {...props}>
-        <rect x="5" y="1" width="6" height="6" fill="#ffcc00"/>
-        <rect x="3" y="7" width="10" height="8" fill="#ffe680"/>
-        <rect x="3" y="15" width="4" height="4" fill="#d32f2f" />
-        <rect x="9" y="15" width="4" height="4" fill="#d32f2f" />
-        <g transform={isAttacking ? 'rotate(-60 12 10)' : ''} style={{transition:'transform 0.1s'}}>
-            <rect x="12" y="6" width="2" height="8" fill="#c2c2c2" />
+export const BrienneIcon: React.FC<UnitProps> = ({ isAttacking, ...props }) => (
+    <svg width="48" height="52" viewBox="0 0 24 26" {...props}>
+        <style>{unitIdleAnim}</style>
+        <g className={isAttacking ? '' : 'idle'}>
+            <path d="M14 8 L 22 10 L 22 24 L 14 22 Z" fill="#1565c0" />
+            <g transform={isAttacking ? 'translateX(-2px)' : ''} style={{transition: 'transform 0.1s'}}>
+                <path d="M7 25 L 11 25 L 11 18 L 7 18 Z" fill="#78909c" />
+                <path d="M13 25 L 17 25 L 17 18 L 13 18 Z" fill="#78909c" />
+                <path d="M6 18 L 18 18 L 18 9 L 6 9 Z" fill="#cfd8dc" />
+                <path d="M8 9 L 16 9 L 16 2 L 8 2 Z" fill="#b0bec5" />
+                <path d="M10 5 L 14 5 L 14 7 L 10 7 Z" fill="#ffb74d" />
+            </g>
+            <g transform={isAttacking ? 'translateX(2px)' : ''} style={{transition: 'transform 0.1s'}}>
+                <path d="M0 9 L 8 9 L 4 21 Z" fill="#90a4ae" />
+                <path d="M5 12 L 7 11 L 8 12 L 7 14 L 5 14 L 4 13 Z" fill="#eceff1"/>
+            </g>
+             <g transform={isAttacking ? 'rotate(-90 18 12)' : 'rotate(-20 18 12)'} style={{ transition: 'transform 0.1s ease-out', transformOrigin: '18px 12px' }}>
+                <path d="M17 12 L 19 12 L 19 11 L 17 11 Z" fill="#d2691e"/>
+                <path d="M18 11 L 18 0 L 19 0 L 19 11 Z" fill="#f5f5f5"/>
+            </g>
         </g>
     </svg>
 );
 
-export const MilitiaIcon: React.FC<UnitProps> = ({ isAttacking, ...props }) => (
+export const BannermanIcon: React.FC<UnitProps> = ({ isAttacking, ...props }) => (
      <svg width="32" height="40" viewBox="0 0 16 20" {...props}>
-        <rect x="5" y="1" width="6" height="6" fill="#a1887f"/>
-        <rect x="3" y="7" width="10" height="8" fill="#8d6e63"/>
-        <rect x="3" y="15" width="4" height="4" fill="#6d4c41" />
-        <rect x="9" y="15" width="4" height="4" fill="#6d4c41" />
-        <g transform={isAttacking ? 'rotate(-90 8 10)' : ''} style={{transition:'transform 0.1s'}}>
-            <rect x="12" y="9" width="4" height="2" fill="#c2c2c2" />
+        <style>{`
+            ${unitIdleAnim}
+            @keyframes banner-wave { 0% { d: "M-2 1 C 0 0, 4 0, 6 1 L 6 7 C 4 8, 0 8, -2 7 Z"; } 50% { d: "M-2 1 C 0 2, 4 2, 6 1 L 6 7 C 4 6, 0 6, -2 7 Z"; } 100% { d: "M-2 1 C 0 0, 4 0, 6 1 L 6 7 C 4 8, 0 8, -2 7 Z"; } }
+        `}</style>
+        <g className="idle">
+            <g transform={isAttacking ? 'translateX(1px)' : ''} style={{transition: 'transform 0.1s'}}>
+                <path d="M4 19 L 7 19 L 7 14 L 4 14 Z" fill="#546e7a" />
+                <path d="M9 19 L 12 19 L 12 14 L 9 14 Z" fill="#546e7a" />
+                <path d="M3 14 L 13 14 L 14 7 L 2 7 Z" fill="#2e7d32"/>
+                <path d="M5 6 L 11 6 L 11 2 L 5 2 Z" fill="#cfd8dc"/>
+                <path d="M6 4 L 10 4 L 10 5 L 6 5 Z" fill="#ffcc80" />
+            </g>
+            <rect x="0" y="0" width="2" height="18" fill="#a1887f"/>
+            <path fill="#eceff1" style={{ animation: 'banner-wave 3s infinite ease-in-out' }} d="M-2 1 C 0 0, 4 0, 6 1 L 6 7 C 4 8, 0 8, -2 7 Z" />
         </g>
     </svg>
 );
-
 
 export const EnemyIcon: React.FC<{type: EnemyType} & UnitProps> = ({ type, isAttacking, ...props }) => {
-    const [walkFrame, setWalkFrame] = React.useState(0);
-    React.useEffect(() => {
-        const interval = setInterval(() => setWalkFrame(f => (f + 1) % 2), 300);
-        return () => clearInterval(interval);
-    }, []);
-
-    const legY = walkFrame === 0 ? 15 : 16;
+    const attackTransform = isAttacking ? 'translateY(-2px)' : '';
+    const attackStyle = { transition: 'transform 0.1s', transform: attackTransform };
 
     switch (type) {
-        case 'GOBLIN': return <svg width="24" height="32" viewBox="0 0 12 16" {...props}><rect x="3" y="1" width="6" height="6" fill="#4caf50"/><rect x="1" y="7" width="10" height="8" fill="#66bb6a"/><rect x="2" y={legY} width="3" height="4" fill="#5d4037" /><rect x="7" y={19 - legY} width="3" height="4" fill="#5d4037" /><g transform={isAttacking ? 'translate(2,0)' : ''}><rect x="9" y="6" width="2" height="4" fill="#c2c2c2" /></g></svg>
-        case 'ORC': return <svg width="32" height="40" viewBox="0 0 16 20" {...props}><rect x="4" y="1" width="8" height="8" fill="#9e9e9e"/><rect x="2" y="9" width="12" height="8" fill="#a2a2a2"/><rect x="3" y={legY+1} width="4" height="4" fill="#424242" /><rect x="9" y={20 - legY} width="4" height="4" fill="#424242" /><g transform={isAttacking ? 'rotate(-45 13 8)' : ''}><rect x="13" y="4" width="3" height="8" fill="#6d4c41" /></g></svg>
-        case 'TROLL': return <svg width="40" height="48" viewBox="0 0 20 24" {...props}><rect x="2" y="1" width="16" height="12" fill="#795548"/><rect x="0" y="13" width="20" height="8" fill="#8d6e63"/><rect x="3" y={legY+3} width="6" height="5" fill="#5d4037" /><rect x="11" y={22 - legY} width="6" height="5" fill="#5d4037" /><g transform={isAttacking ? 'translate(0, -4)' : ''}><rect x="14" y="6" width="6" height="6" fill="#5d4037" /></g></svg>
+        case 'ORC_GRUNT': return <svg width="28" height="36" viewBox="0 0 14 18" {...props}><g className={isAttacking ? '' : 'idle'} style={attackStyle}><path d="M2 17 L 5 17 L 5 12 L 2 12 Z" fill="#5d4037" /><path d="M9 17 L 12 17 L 12 12 L 9 12 Z" fill="#5d4037" /><path d="M1 12 L 13 12 L 12 6 L 2 6 Z" fill="#8d6e63" /><path d="M3 6 L 11 6 C 12 3, 9 0, 7 0 C 5 0, 2 3, 3 6 Z" fill="#7cb342" /><path d="M5 4 L 6 4" stroke="#212121" /><path d="M8 4 L 9 4" stroke="#212121" /><path d="M4 7 L 6 7" stroke="#FFF" /><path d="M8 7 L 10 7" stroke="#FFF" /><g transform={isAttacking ? 'rotate(30 10 10)' : ''} style={{transition:'transform 0.1s'}}><path d="M10 10 L 14 10 L 14 8 L 10 8 Z" fill="#a1887f" /><path d="M12 8 L 12 6 L 13 6 L 13 8 Z" fill="#757575" /></g></g></svg>
+        case 'ORC_BERSERKER': return <svg width="32" height="40" viewBox="0 0 16 20" {...props}><g className={isAttacking ? '' : 'idle'} style={attackStyle}><path d="M2 19 L 6 19 L 5 13 L 1 13 Z" fill="#757575" /><path d="M10 19 L 14 19 L 15 13 L 11 13 Z" fill="#757575" /><path d="M1 13 L 15 13 L 14 5 L 2 5 Z" fill="#a1887f" /><path d="M4 5 L 12 5 C 14 2, 10 -1, 8 -1 C 6 -1, 2 2, 4 5 Z" fill="#558b2f" /><path d="M6 3 L 7 3" stroke="#212121" /><path d="M9 3 L 11 3" stroke="#d32f2f" strokeWidth="2" /><path d="M5 6 L 7 6" stroke="#FFF" /><g transform={isAttacking ? 'rotate(-45 13 8)' : ''} style={{transition:'transform 0.1s'}}><path d="M13 2 L 16 2 L 16 12 L 13 12 Z" fill="#757575" /><path d="M14 1 L 15 1 L 15 13 L 14 13 Z" fill="#9e9e9e" /></g></g></svg>
+        case 'OGRE_BRUTE': return <svg width="40" height="48" viewBox="0 0 20 24" {...props}><g className={isAttacking ? '' : 'idle'} style={attackStyle}><path d="M3 23 L 9 23 L 9 17 L 3 17 Z" fill="#757575" /><path d="M11 23 L 17 23 L 17 17 L 11 17 Z" fill="#757575" /><path d="M2 17 L 18 17 C 20 12, 20 5, 18 2 L 2 2 C 0 5, 0 12, 2 17 Z" fill="#9e9e9e" /><path d="M5 7 L 8 7" stroke="#212121" strokeWidth="2" /><path d="M12 7 L 15 7" stroke="#212121" strokeWidth="2" /><path d="M6 12 L 14 12 L 12 14 L 8 14 Z" fill="#f5f5f5" /><g transform={isAttacking ? 'rotate(-30 18 10)' : ''} style={{transition:'transform 0.1s'}}><path d="M16 4 L 20 6 L 20 18 L 16 16 Z" fill="#8d6e63" /></g></g></svg>
     }
 };
 
+// ===================================================================================
 // Projectiles
-export const ArrowProjectileIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg {...props} width="20" height="4" viewBox="0 0 20 4"><rect x="0" y="1" width="18" height="2" fill="#8d6e63" /><polygon points="16,0 20,2 16,4" fill="#fff" /></svg>
+// ===================================================================================
+export const IceArrowProjectileIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg {...props} width="24" height="8" viewBox="0 0 24 8" style={{filter: 'drop-shadow(0 0 2px #81d4fa)'}}><path d="M0 3 H 20 L 24 4 L 20 5 H 0 Z" fill="#e1f5fe" /><path d="M0 3 H 10" stroke="#81d4fa" strokeWidth="1" fill="none"/></svg>
 );
-export const MagicBoltProjectileIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg {...props} width="16" height="16" viewBox="0 0 16 16"><rect x="4" y="0" width="8" height="16" fill="cyan" /><rect x="0" y="4" width="16" height="8" fill="cyan" /><rect x="4" y="4" width="8" height="8" fill="#fff" /></svg>
+export const NatureBoltProjectileIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg {...props} width="16" height="16" viewBox="0 0 16 16" style={{filter: 'drop-shadow(0 0 2px #4caf50)'}}><circle cx="8" cy="8" r="8" fill="#a5d6a7"><animate attributeName="r" values="8;6;8" dur="0.5s" repeatCount="indefinite" /></circle><circle cx="8" cy="8" r="4" fill="#4caf50" /></svg>
 );
-export const CannonballProjectileIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg {...props} width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="#424242" /><circle cx="7" cy="7" r="2" fill="#fff" /></svg>
+export const CatapultRockProjectileIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg {...props} width="16" height="16" viewBox="0 0 16 16"><g><animateTransform attributeName="transform" type="rotate" from="0 8 8" to="360 8 8" dur="0.5s" repeatCount="indefinite" /><circle cx="8" cy="8" r="7" fill="#795548" /><circle cx="7" cy="7" r="2" fill="#a1887f" /></g></svg>
 );
 
+// ===================================================================================
 // Special Effects
+// ===================================================================================
 export const Explosion: React.FC<{ position: Vector2D, radius: number }> = ({ position, radius }) => (
-  <div className="absolute transform -translate-x-1/2 -translate-y-1/2" style={{ left: position.x, top: position.y, zIndex: 15000 }}>
-    <svg width={radius * 2} height={radius * 2} viewBox="0 0 100 100" className="animate-ping opacity-75">
-        <circle cx="50" cy="50" r="40" fill="orange" />
-        <circle cx="50" cy="50" r="20" fill="yellow" />
+  <div className="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ left: position.x, top: position.y, zIndex: 15000 }}>
+    <svg width={radius * 2} height={radius * 2} viewBox="0 0 100 100">
+        <circle cx="50" cy="50" fill="yellow">
+            <animate attributeName="r" values="0;50" dur="0.3s" begin="0s" fill="freeze" />
+            <animate attributeName="opacity" values="1;0" dur="0.3s" begin="0s" fill="freeze" />
+        </circle>
+        <circle cx="50" cy="50" fill="orange">
+            <animate attributeName="r" values="0;40" dur="0.4s" begin="0s" fill="freeze" />
+            <animate attributeName="opacity" values="1;0" dur="0.4s" begin="0s" fill="freeze" />
+        </circle>
     </svg>
   </div>
 );
@@ -274,23 +394,51 @@ export const TargetCursor: React.FC<{ position: Vector2D; spell: PlayerSpell }> 
   return (
     <div className="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ left: position.x, top: position.y, zIndex: 20000 }}>
         <svg width={radius * 2} height={radius * 2} viewBox="0 0 200 200">
-            <rect x="98" y="0" width="4" height="200" fill={color}/>
-            <rect x="0" y="98" width="200" height="4" fill={color}/>
+            <circle cx="100" cy="100" r="98" fill="none" stroke={color} strokeWidth="4" strokeDasharray="10 10">
+                 <animateTransform attributeName="transform" type="rotate" from="0 100 100" to="360 100 100" dur="5s" repeatCount="indefinite" />
+            </circle>
         </svg>
     </div>
   );
 };
 
 export const BuffEffect: React.FC<{size?: number}> = ({size = 60}) => {
-    const height = size / 2;
     return (
         <div className="absolute bottom-[-10px] left-1/2 transform -translate-x-1/2 pointer-events-none">
-            <svg width={size} height={height} viewBox={`0 0 ${size} ${height}`}>
-                <ellipse cx={size/2} cy={height/2} rx={size/2 - 2} ry={height/2 - 2} fill="none" stroke="#FFFDE7" strokeWidth="2">
-                     <animate attributeName="rx" values={`${size/2-2};${size/2-5};${size/2-2}`} dur="1s" repeatCount="indefinite" />
-                     <animate attributeName="ry" values={`${height/2-2};${height/2-4};${height/2-2}`} dur="1s" repeatCount="indefinite" />
+            <svg width={size} height={size / 2} viewBox={`0 0 ${size} ${size / 2}`}>
+                <ellipse cx={size/2} cy={size/4} rx={size/2 - 2} ry={size/4 - 2} fill="none" stroke="#FFFDE7" strokeWidth="2">
+                    <animate attributeName="opacity" values="0;1;0" dur="1.5s" repeatCount="indefinite" />
                 </ellipse>
             </svg>
         </div>
     )
 }
+
+export const SlowEffect: React.FC<{size?: number}> = ({size = 30}) => (
+    <div className="absolute bottom-[-10px] left-1/2 transform -translate-x-1/2 pointer-events-none opacity-75">
+        <svg width={size} height={size / 2} viewBox={`0 0 ${size} ${size / 2}`}>
+            <ellipse cx={size/2} cy={size/4} rx={size/2 - 1} ry={size/4 - 1} fill="#00e5ff" />
+        </svg>
+    </div>
+);
+
+export const TauntEffect: React.FC<{size?: number}> = ({size = 60}) => (
+    <div className="absolute top-[-25px] left-1/2 transform -translate-x-1/2 pointer-events-none">
+        <svg width={size} height={size/2} viewBox={`0 0 ${size} ${size/2}`}>
+            <ellipse cx={size/2} cy={size/4} rx={size/2 - 2} ry={size/4 - 2} fill="none" stroke="#f44336" strokeWidth="2">
+                 <animate attributeName="stroke-dasharray" values="1,10;5,5;10,1" dur="1s" repeatCount="indefinite" />
+            </ellipse>
+        </svg>
+    </div>
+);
+
+// ===================================================================================
+// Portraits
+// ===================================================================================
+export const WinterfellWatchtowerPortrait = WinterfellWatchtowerIcon;
+export const WeirwoodGrovePortrait = WeirwoodGroveIcon;
+export const NorthernBarracksPortrait = NorthernBarracksIcon;
+export const SiegeWorkshopPortrait = SiegeWorkshopIcon;
+export const NorthernSoldierPortrait = NorthernSoldierIcon;
+export const BriennePortrait = BrienneIcon;
+export const EnemyPortrait = EnemyIcon;

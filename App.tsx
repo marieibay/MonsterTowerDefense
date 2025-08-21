@@ -16,7 +16,7 @@ import {
   EARLY_WAVE_BONUS,
   HERO_START_GRID_POS,
 } from './constants';
-import { DamageType } from './types';
+import { DamageType, ArmorType } from './types';
 import type { 
   GameStatus, 
   Tower, 
@@ -32,9 +32,16 @@ import type {
   Explosion,
   GoldParticle,
   RallyPointDragState,
+  ProjectileType,
 } from './types';
 import { getDistance, AudioManager, gameToScreen } from './utils';
 import { MAP_PATH } from './constants';
+
+const projectileSoundMap: Record<ProjectileType, 'ARROW' | 'MAGIC_BOLT' | 'CANNONBALL'> = {
+    'ICE_ARROW': 'ARROW',
+    'NATURE_BOLT': 'MAGIC_BOLT',
+    'CATAPULT_ROCK': 'CANNONBALL',
+};
 
 const App: React.FC = () => {
   const [gameStatus, setGameStatus] = useState<GameStatus>('IDLE');
@@ -66,6 +73,8 @@ const App: React.FC = () => {
     isAttacking: false,
     abilityCooldown: 0,
     abilityActiveTimer: 0,
+    armorType: HERO_STATS.armorType,
+    armorValue: HERO_STATS.armorValue,
   });
   const [selectedSpot, setSelectedSpot] = useState<Vector2D | null>(null);
   const [selectedUnit, setSelectedUnit] = useState<SelectableUnit | null>(null);
@@ -160,6 +169,8 @@ const App: React.FC = () => {
         isAttacking: false,
         abilityCooldown: 0,
         abilityActiveTimer: 0,
+        armorType: HERO_STATS.armorType,
+        armorValue: HERO_STATS.armorValue,
     });
     setSelectedSpot(null);
     setSelectedUnit(null);
@@ -233,7 +244,7 @@ const App: React.FC = () => {
         damageType: TOWER_STATS[towerType][0].damageType,
       };
 
-      if (towerType === 'BARRACKS') {
+      if (towerType === 'NORTHERN_BARRACKS') {
           const rallyPoint = findClosestPathPoint(selectedSpot);
           newTower.rallyPoint = rallyPoint;
           const newSoldiers: Soldier[] = [];
@@ -290,7 +301,7 @@ const App: React.FC = () => {
     const sellValue = TOWER_STATS[towerToSell.type][towerToSell.level - 1].sellValue;
     setStats(s => ({...s, gold: s.gold + sellValue}));
     setTowers(prev => prev.filter(t => t.id !== towerId));
-    if (towerToSell.type === 'BARRACKS') {
+    if (towerToSell.type === 'NORTHERN_BARRACKS') {
       setSoldiers(prev => prev.filter(s => s.barracksId !== towerId));
     }
     deselectAll();
@@ -309,6 +320,12 @@ const App: React.FC = () => {
     setHero(h => {
         if (h.health > 0 && h.respawnTimer <= 0 && h.abilityCooldown <= 0) {
             audioManager.playSound('heroAbility');
+            setEnemies(prevEnemies => prevEnemies.map(enemy => {
+                if (getDistance(h.position, enemy.position) <= HERO_STATS.abilityRange) {
+                    return {...enemy, tauntedBy: h.id};
+                }
+                return enemy;
+            }));
             return {
                 ...h,
                 abilityCooldown: HERO_STATS.abilityCooldown,
@@ -321,9 +338,9 @@ const App: React.FC = () => {
 
   const setRallyPoint = useCallback((screenPos: Vector2D) => {
     if (selectedUnit && 'health' in selectedUnit && selectedUnit.id === hero.id) {
-       setHero(h => ({ ...h, rallyPoint: screenPos }));
-    } else if (selectedUnit && 'type' in selectedUnit && selectedUnit.type === 'BARRACKS') {
-        const towerStats = TOWER_STATS.BARRACKS[selectedUnit.level - 1];
+       setHero(h => ({ ...h, rallyPoint: screenPos, targetId: null }));
+    } else if (selectedUnit && 'type' in selectedUnit && selectedUnit.type === 'NORTHERN_BARRACKS') {
+        const towerStats = TOWER_STATS.NORTHERN_BARRACKS[selectedUnit.level - 1];
         const barracksScreenPos = gameToScreen(selectedUnit.position);
         if (getDistance(barracksScreenPos, screenPos) <= towerStats.range) {
             let closestGridPoint: Vector2D = {...MAP_PATH[0]};
@@ -361,14 +378,24 @@ const App: React.FC = () => {
     }
   }, [selectedUnit, hero.id]);
 
-  const getGameCoordinates = useCallback((e: React.MouseEvent<HTMLDivElement>): Vector2D => {
+  const getGameCoordinates = useCallback((e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>): Vector2D => {
       const rect = e.currentTarget.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / scale;
-      const y = (e.clientY - rect.top) / scale;
+      let clientX, clientY;
+      if ('touches' in e.nativeEvent) {
+          clientX = e.nativeEvent.touches[0].clientX;
+          clientY = e.nativeEvent.touches[0].clientY;
+      } else {
+          clientX = (e as React.MouseEvent<HTMLDivElement>).clientX;
+          clientY = (e as React.MouseEvent<HTMLDivElement>).clientY;
+      }
+
+      const x = (clientX - rect.left) / scale;
+      const y = (clientY - rect.top) / scale;
       return {x, y};
   }, [scale]);
 
-  const handleMapMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMapInteractionStart = useCallback((e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    e.preventDefault();
     const screenPos = getGameCoordinates(e);
     if (activeSpell) return;
       
@@ -379,7 +406,7 @@ const App: React.FC = () => {
                 currentPosition: screenPos,
                 unitId: selectedUnit.id,
             });
-        } else if ('level' in selectedUnit && selectedUnit.type === 'BARRACKS' && selectedUnit.rallyPoint) {
+        } else if ('level' in selectedUnit && selectedUnit.type === 'NORTHERN_BARRACKS' && selectedUnit.rallyPoint) {
             setRallyPointDrag({
                 startPosition: gameToScreen(selectedUnit.rallyPoint),
                 currentPosition: screenPos,
@@ -391,14 +418,16 @@ const App: React.FC = () => {
     }
   }, [activeSpell, selectedUnit, getGameCoordinates]);
 
-  const handleMapMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMapInteractionMove = useCallback((e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+      e.preventDefault();
       const screenPos = getGameCoordinates(e);
       if (rallyPointDrag) {
           setRallyPointDrag(prev => prev ? { ...prev, currentPosition: screenPos } : null);
       }
   }, [rallyPointDrag, getGameCoordinates]);
 
-  const handleMapMouseUp = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMapInteractionEnd = useCallback((e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+      e.preventDefault();
       const screenPos = getGameCoordinates(e);
       if (activeSpell) {
           if (activeSpell === 'REINFORCEMENTS') {
@@ -423,7 +452,8 @@ const App: React.FC = () => {
                   id: Date.now(),
                   position: screenPos,
                   radius: RAIN_OF_FIRE_STATS.radius,
-                  lifetime: 500
+                  lifetime: 500,
+                  type: 'FIRE'
               }]);
               setEnemies(prevEnemies => prevEnemies.map(enemy => {
                   if (getDistance(screenPos, enemy.position) <= RAIN_OF_FIRE_STATS.radius) {
@@ -531,6 +561,8 @@ const App: React.FC = () => {
                   armorValue: enemyStats.armorValue,
                   attackCooldown: 0,
                   isAttacking: false,
+                  speed: enemyStats.speed,
+                  slowTimer: 0,
               };
               currentEnemies.push(newEnemy);
               waveSpawnData.current.spawnIndex++;
@@ -539,8 +571,17 @@ const App: React.FC = () => {
       }
 
       currentHero.abilityCooldown = Math.max(0, currentHero.abilityCooldown - msPerFrame);
+      const wasAbilityActive = currentHero.abilityActiveTimer > 0;
       currentHero.abilityActiveTimer = Math.max(0, currentHero.abilityActiveTimer - msPerFrame);
-      const isHeroAbilityActive = currentHero.abilityActiveTimer > 0;
+      const isAbilityActive = currentHero.abilityActiveTimer > 0;
+      if (wasAbilityActive && !isAbilityActive) {
+          currentEnemies = currentEnemies.map(e => e.tauntedBy === currentHero.id ? { ...e, tauntedBy: null } : e);
+      }
+      
+      const currentArmorValue = isAbilityActive 
+          ? HERO_STATS.armorValue + HERO_STATS.abilityDefenseBonus
+          : HERO_STATS.armorValue;
+      currentHero.armorValue = Math.min(0.9, currentArmorValue);
 
       if (currentHero.respawnTimer > 0) {
         currentHero.respawnTimer = Math.max(0, currentHero.respawnTimer - msPerFrame);
@@ -554,42 +595,65 @@ const App: React.FC = () => {
         const newAttackCooldown = Math.max(0, currentHero.attackCooldown - msPerFrame);
 
         const currentTarget = newHeroTargetId ? currentEnemies.find(e => e.id === newHeroTargetId) : undefined;
-        if (!currentTarget || getDistance(currentHero.position, currentTarget.position) > HERO_STATS.range) {
+        
+        // Drop target if it's dead or moves out of patrol range from the RALLY POINT
+        if (!currentTarget || getDistance(currentHero.rallyPoint, currentTarget.position) > HERO_STATS.patrolRange) {
             newHeroTargetId = null;
         }
 
+        // Find a new target if we don't have one
         if (!newHeroTargetId) {
             let potentialTarget: Enemy | null = null;
-            let minDistance = HERO_STATS.range;
+            let minDistance = Infinity;
             for (const enemy of currentEnemies) {
+                // Only consider enemies within patrol range of the RALLY POINT
                 if (enemy.health > 0) {
-                    const distance = getDistance(currentHero.position, enemy.position);
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        potentialTarget = enemy;
+                    const distanceToRally = getDistance(currentHero.rallyPoint, enemy.position);
+                    if (distanceToRally <= HERO_STATS.patrolRange) {
+                        const distanceToHero = getDistance(currentHero.position, enemy.position);
+                        if (distanceToHero < minDistance) {
+                            minDistance = distanceToHero;
+                            potentialTarget = enemy;
+                        }
                     }
                 }
             }
             if (potentialTarget) newHeroTargetId = potentialTarget.id;
         }
+        
+        const targetEnemy = newHeroTargetId ? currentEnemies.find(e => e.id === newHeroTargetId) : null;
+        const distanceToRally = getDistance(currentHero.position, currentHero.rallyPoint);
 
-        if (newHeroTargetId) {
-            if (newAttackCooldown <= 0) {
-                audioManager.playSound('heroAttack');
-                const targetIndex = currentEnemies.findIndex(e => e.id === newHeroTargetId);
-                if (targetIndex !== -1) {
-                    const enemy = currentEnemies[targetIndex];
-                    let damage = HERO_STATS.damage;
-                    if(isHeroAbilityActive) damage *= HERO_STATS.abilityDamageBoost;
-                    if (enemy.armorType === 'PHYSICAL') damage *= (1 - enemy.armorValue);
-                    currentEnemies[targetIndex] = { ...enemy, health: enemy.health - damage };
+        // Has a valid target
+        if (targetEnemy) {
+            const distanceToTarget = getDistance(currentHero.position, targetEnemy.position);
+
+            // Target is in melee range -> ATTACK
+            if (distanceToTarget <= HERO_STATS.range) {
+                if (newAttackCooldown <= 0) {
+                    audioManager.playSound('heroAttack');
+                    const targetIndex = currentEnemies.findIndex(e => e.id === newHeroTargetId);
+                    if (targetIndex !== -1) {
+                        let damage = HERO_STATS.damage;
+                        if(targetEnemy.armorType === 'PHYSICAL') damage *= (1 - targetEnemy.armorValue);
+                        currentEnemies[targetIndex] = { ...targetEnemy, health: targetEnemy.health - damage };
+                    }
+                    currentHero.attackCooldown = HERO_STATS.attackRate;
+                    currentHero.isAttacking = true;
+                    setAttackingState(currentHero.id, true, 300);
                 }
-                currentHero.attackCooldown = HERO_STATS.attackRate;
-                currentHero.isAttacking = true;
-                setAttackingState(currentHero.id, true, 300);
+            } 
+            // Target is out of melee range -> CHASE
+            else {
+                const moveDistance = HERO_STATS.speed * timeDelta;
+                const direction = { x: targetEnemy.position.x - currentHero.position.x, y: targetEnemy.position.y - currentHero.position.y };
+                const normalizedDir = { x: direction.x / distanceToTarget, y: direction.y / distanceToTarget };
+                currentHero.position.x += normalizedDir.x * moveDistance;
+                currentHero.position.y += normalizedDir.y * moveDistance;
             }
-        } else {
-            const distanceToRally = getDistance(currentHero.position, currentHero.rallyPoint);
+        } 
+        // No target, return to rally point
+        else {
             if (distanceToRally > 5) {
                 const moveDistance = HERO_STATS.speed * timeDelta;
                 const direction = { x: currentHero.rallyPoint.x - currentHero.position.x, y: currentHero.rallyPoint.y - currentHero.position.y };
@@ -603,7 +667,7 @@ const App: React.FC = () => {
     }
 
       currentTowers = currentTowers.map(tower => {
-        if (tower.type === 'BARRACKS') return tower;
+        if (tower.type === 'NORTHERN_BARRACKS') return tower;
         const newCooldown = Math.max(0, tower.cooldown - msPerFrame);
         let newTargetId = tower.targetId;
         const towerLevelStats = TOWER_STATS[tower.type][tower.level - 1];
@@ -628,12 +692,14 @@ const App: React.FC = () => {
           if (newTargetId) {
             const targetEnemy = currentEnemies.find(e => e.id === newTargetId);
             if (towerLevelStats.projectileType && towerLevelStats.projectileSpeed && targetEnemy) {
-              audioManager.playSound(towerLevelStats.projectileType);
+              const sound = projectileSoundMap[towerLevelStats.projectileType];
+              audioManager.playSound(sound);
               newProjectiles.push({
                 id: now + Math.random(), type: towerLevelStats.projectileType, position: { ...screenTowerPos },
-                targetId: tower.type === 'ARTILLERY' ? null : newTargetId, targetPosition: {...targetEnemy.position},
+                targetId: tower.type === 'SIEGE_WORKSHOP' ? null : newTargetId, targetPosition: {...targetEnemy.position},
                 damage: towerLevelStats.damage, damageType: towerLevelStats.damageType, speed: towerLevelStats.projectileSpeed,
-                splashRadius: towerLevelStats.splashRadius
+                splashRadius: towerLevelStats.splashRadius,
+                slows: towerLevelStats.slows,
               });
               
               setAttackingState(tower.id, true, 300);
@@ -651,7 +717,7 @@ const App: React.FC = () => {
             return { ...soldier, respawnTimer: newRespawnTimer };
         }
         if (soldier.health <= 0) return { ...soldier, respawnTimer: SOLDIER_STATS.respawnTime, targetId: null, isAttacking: false };
-        const isBuffed = isHeroAbilityActive && getDistance(soldier.position, currentHero.position) < HERO_STATS.abilityRange;
+
         let newTargetId = soldier.targetId;
         const newAttackCooldown = Math.max(0, soldier.attackCooldown - msPerFrame);
         const currentTarget = newTargetId ? currentEnemies.find(e => e.id === newTargetId) : undefined;
@@ -677,12 +743,11 @@ const App: React.FC = () => {
                 if (targetIndex !== -1) {
                     const enemy = currentEnemies[targetIndex];
                     let damage = SOLDIER_STATS.damage;
-                    if(isBuffed) damage *= HERO_STATS.abilityDamageBoost;
                     if(enemy.armorType === 'PHYSICAL') damage *= (1 - enemy.armorValue);
                     currentEnemies[targetIndex] = { ...enemy, health: enemy.health - damage };
                 }
                 setAttackingState(soldier.id, true, 300);
-                return { ...soldier, attackCooldown: SOLDIER_STATS.attackRate, targetId: newTargetId, isBuffed, isAttacking: true };
+                return { ...soldier, attackCooldown: SOLDIER_STATS.attackRate, targetId: newTargetId, isAttacking: true };
             }
         } else {
             const distanceToRally = getDistance(soldier.position, soldier.rallyPoint!);
@@ -694,13 +759,12 @@ const App: React.FC = () => {
                 soldier.position.y += normalizedDir.y * moveDistance;
             }
         }
-        return { ...soldier, attackCooldown: newAttackCooldown, targetId: newTargetId, isBuffed };
+        return { ...soldier, attackCooldown: newAttackCooldown, targetId: newTargetId };
     });
 
       currentReinforcements = currentReinforcements.map(r => {
           let newTargetId = r.targetId;
           const newAttackCooldown = Math.max(0, r.attackCooldown - msPerFrame);
-          const isBuffed = isHeroAbilityActive && getDistance(r.position, currentHero.position) < HERO_STATS.abilityRange;
           const currentTarget = newTargetId ? currentEnemies.find(e => e.id === newTargetId) : undefined;
           if (!currentTarget || getDistance(r.position, currentTarget.position) > REINFORCEMENTS_STATS.range) newTargetId = null;
           if (!newTargetId) {
@@ -719,15 +783,14 @@ const App: React.FC = () => {
                   if (targetIndex !== -1) {
                       const enemy = currentEnemies[targetIndex];
                       let damage = REINFORCEMENTS_STATS.damage;
-                      if(isBuffed) damage *= HERO_STATS.abilityDamageBoost;
                       if(enemy.armorType === 'PHYSICAL') damage *= (1 - enemy.armorValue);
                       currentEnemies[targetIndex] = {...enemy, health: enemy.health - damage };
                   }
                   setAttackingState(r.id, true, 300);
-                  return { ...r, attackCooldown: REINFORCEMENTS_STATS.attackRate, targetId: newTargetId, isBuffed, isAttacking: true };
+                  return { ...r, attackCooldown: REINFORCEMENTS_STATS.attackRate, targetId: newTargetId, isAttacking: true };
               }
           }
-          return {...r, lifetime: r.lifetime - msPerFrame, attackCooldown: newAttackCooldown, targetId: newTargetId, isBuffed};
+          return {...r, lifetime: r.lifetime - msPerFrame, attackCooldown: newAttackCooldown, targetId: newTargetId };
       }).filter(r => r.lifetime > 0 && r.health > 0);
       
       const updatedProjectiles = projectiles.filter(proj => {
@@ -736,24 +799,32 @@ const App: React.FC = () => {
           const distanceToTarget = getDistance(proj.position, targetPosition);
           const moveDistance = proj.speed * timeDelta;
           if (distanceToTarget <= moveDistance) {
+              const applyDamage = (enemy: Enemy) => {
+                  let actualDamage = proj.damage;
+                  if (proj.damageType === DamageType.PHYSICAL && enemy.armorType === 'PHYSICAL') actualDamage *= (1 - enemy.armorValue);
+                  if (proj.damageType === DamageType.MAGIC && enemy.armorType === ArmorType.NONE) actualDamage *= 1.25; // Example: magic is strong vs unarmored
+                  
+                  let newSlowTimer = enemy.slowTimer;
+                  if (proj.slows) {
+                      newSlowTimer = proj.slows.duration;
+                  }
+
+                  return {...enemy, health: enemy.health - actualDamage, slowTimer: newSlowTimer };
+              }
+
               if (proj.splashRadius && proj.splashRadius > 0) {
                    audioManager.playSound('explosion');
-                   setExplosions(exps => [...exps, { id: Date.now() + Math.random(), position: targetPosition, radius: proj.splashRadius!, lifetime: 300 }]);
+                   setExplosions(exps => [...exps, { id: Date.now() + Math.random(), position: targetPosition, radius: proj.splashRadius!, lifetime: 300, type: 'GENERIC' }]);
                    currentEnemies = currentEnemies.map(enemy => {
                        if (getDistance(enemy.position, targetPosition) <= proj.splashRadius!) {
-                           let actualDamage = proj.damage;
-                            if (proj.damageType === DamageType.PHYSICAL && enemy.armorType === 'PHYSICAL') actualDamage *= (1 - enemy.armorValue);
-                           return {...enemy, health: enemy.health - actualDamage };
+                           return applyDamage(enemy);
                        }
                        return enemy;
                    });
               } else {
                   const targetIndex = currentEnemies.findIndex(e => e.id === proj.targetId);
                   if (targetIndex !== -1) {
-                      const enemy = currentEnemies[targetIndex];
-                      let actualDamage = proj.damage;
-                      if (proj.damageType === DamageType.PHYSICAL && enemy.armorType === 'PHYSICAL') actualDamage *= (1 - enemy.armorValue);
-                      currentEnemies[targetIndex] = {...enemy, health: enemy.health - actualDamage };
+                      currentEnemies[targetIndex] = applyDamage(currentEnemies[targetIndex]);
                   }
               }
               return false; 
@@ -771,78 +842,110 @@ const App: React.FC = () => {
             audioManager.playSound('enemyDeath');
             return null;
         }
+
         let isBlocked = false;
         let blocker: Soldier | Hero | Reinforcement | null = null;
         let blockerType: 'soldier' | 'hero' | 'reinforcement' | null = null;
         let closestDist = Infinity;
-        const allMeleeUnits: (Soldier | Reinforcement)[] = [...currentSoldiers, ...currentReinforcements];
-        allMeleeUnits.forEach(unit => {
-            if (unit.health > 0 && ('barracksId' in unit ? unit.respawnTimer <= 0 : true)) {
-                const dist = getDistance(enemy.position, unit.position);
-                const blockingRadius = 'barracksId' in unit ? SOLDIER_STATS.blockingRadius : REINFORCEMENTS_STATS.blockingRadius;
-                if (dist < blockingRadius && dist < closestDist) {
-                    closestDist = dist; isBlocked = true; blocker = unit;
-                    blockerType = 'barracksId' in unit ? 'soldier' : 'reinforcement';
-                }
-            }
-        });
-        if (currentHero.health > 0 && currentHero.respawnTimer <= 0) {
+        
+        // Check for hero first if taunted
+        if (enemy.tauntedBy === currentHero.id && currentHero.health > 0) {
             const dist = getDistance(enemy.position, currentHero.position);
-            if (dist < HERO_STATS.blockingRadius && dist < closestDist) {
-                closestDist = dist; isBlocked = true; blocker = currentHero; blockerType = 'hero';
+            if (dist < HERO_STATS.blockingRadius) {
+                 closestDist = dist; isBlocked = true; blocker = currentHero; blockerType = 'hero';
             }
         }
+        
+        if (!isBlocked) {
+            const allMeleeUnits: (Soldier | Reinforcement)[] = [...currentSoldiers, ...currentReinforcements];
+            allMeleeUnits.forEach(unit => {
+                if (unit.health > 0 && ('barracksId' in unit ? unit.respawnTimer <= 0 : true)) {
+                    const dist = getDistance(enemy.position, unit.position);
+                    const blockingRadius = 'barracksId' in unit ? SOLDIER_STATS.blockingRadius : REINFORCEMENTS_STATS.blockingRadius;
+                    if (dist < blockingRadius && dist < closestDist) {
+                        closestDist = dist; isBlocked = true; blocker = unit;
+                        blockerType = 'barracksId' in unit ? 'soldier' : 'reinforcement';
+                    }
+                }
+            });
+            if (currentHero.health > 0 && currentHero.respawnTimer <= 0) {
+                const dist = getDistance(enemy.position, currentHero.position);
+                if (dist < HERO_STATS.blockingRadius && dist < closestDist) {
+                    isBlocked = true; blocker = currentHero; blockerType = 'hero';
+                }
+            }
+        }
+
         const enemyStats = ENEMY_STATS[enemy.type];
         const newAttackCooldown = Math.max(0, (enemy.attackCooldown || 0) - msPerFrame);
-        if (isBlocked && blocker && blockerType) {
+
+        if (isBlocked && blocker) {
             if (newAttackCooldown <= 0) {
                 audioManager.playSound('enemyAttack');
+                let damageDealt = enemyStats.damage;
                 if (blockerType === 'hero') {
-                    currentHero.health = Math.max(0, currentHero.health - enemyStats.damage);
-                    if (currentHero.health <= 0) currentHero.respawnTimer = HERO_STATS.respawnTime;
+                     const heroBlocker = blocker as Hero;
+                     damageDealt *= (1 - heroBlocker.armorValue);
+                     heroBlocker.health = Math.max(0, heroBlocker.health - damageDealt);
+                     if (heroBlocker.health <= 0) { 
+                        heroBlocker.respawnTimer = HERO_STATS.respawnTime;
+                        audioManager.playSound('enemyDeath'); // a hero death sound
+                     }
                 } else if (blockerType === 'soldier') {
                     const soldierIndex = currentSoldiers.findIndex(s => s.id === blocker!.id);
-                    if (soldierIndex !== -1) currentSoldiers[soldierIndex].health = Math.max(0, currentSoldiers[soldierIndex].health - enemyStats.damage);
+                    if (soldierIndex !== -1) currentSoldiers[soldierIndex].health = Math.max(0, currentSoldiers[soldierIndex].health - damageDealt);
                 } else if (blockerType === 'reinforcement') {
-                    const reinforcementIndex = currentReinforcements.findIndex(s => s.id === blocker!.id);
-                    if (reinforcementIndex !== -1) currentReinforcements[reinforcementIndex].health = Math.max(0, currentReinforcements[reinforcementIndex].health - enemyStats.damage);
+                     const reinforcementIndex = currentReinforcements.findIndex(s => s.id === blocker!.id);
+                    if (reinforcementIndex !== -1) currentReinforcements[reinforcementIndex].health = Math.max(0, currentReinforcements[reinforcementIndex].health - damageDealt);
                 }
                 setAttackingState(enemy.id, true, 300);
                 return { ...enemy, attackCooldown: enemyStats.attackRate, isAttacking: true };
             }
             return { ...enemy, attackCooldown: newAttackCooldown };
-        } else {
-            const distanceToTravel = enemyStats.speed * timeDelta;
-            let currentPathIndex = enemy.pathIndex;
-            let newPosition = { ...enemy.position };
-            if (currentPathIndex < MAP_PATH.length - 1) {
-              const nextPathNodeScreen = gameToScreen(MAP_PATH[currentPathIndex + 1]);
-              const distanceToNextNode = getDistance(newPosition, nextPathNodeScreen);
-              if (distanceToNextNode < distanceToTravel) {
-                  const remainingDistance = distanceToTravel - distanceToNextNode;
-                  currentPathIndex++;
-                   if (currentPathIndex >= MAP_PATH.length - 1) {
-                       enemiesWhoReachedEnd.push(enemy.id.toString());
-                       return null;
-                   } else {
-                        const nextNextNode = gameToScreen(MAP_PATH[currentPathIndex + 1]);
-                        const directionToNext = {x: nextNextNode.x - nextPathNodeScreen.x, y: nextNextNode.y - nextPathNodeScreen.y};
-                        const distToNext = getDistance(nextPathNodeScreen, nextNextNode) || 1;
-                        const normalizedDir = {x: directionToNext.x / distToNext, y: directionToNext.y / distToNext};
-                        newPosition = { x: nextPathNodeScreen.x + normalizedDir.x * remainingDistance, y: nextPathNodeScreen.y + normalizedDir.y * remainingDistance };
-                   }
-              } else {
-                  const direction = { x: nextPathNodeScreen.x - newPosition.x, y: nextPathNodeScreen.y - newPosition.y };
-                  const normalizedDir = { x: direction.x / distanceToNextNode, y: direction.y / distanceToNextNode };
-                  newPosition.x += normalizedDir.x * distanceToTravel;
-                  newPosition.y += normalizedDir.y * distanceToTravel;
-              }
-            } else {
-               enemiesWhoReachedEnd.push(enemy.id.toString());
-               return null;
-            }
-            return { ...enemy, position: newPosition, pathIndex: currentPathIndex, attackCooldown: 0 };
         }
+        
+        if (enemy.tauntedBy === currentHero.id && currentHero.health > 0) {
+            const distToTaunter = getDistance(enemy.position, currentHero.position);
+            const moveDistance = enemy.speed * timeDelta;
+            const direction = { x: currentHero.position.x - enemy.position.x, y: currentHero.position.y - enemy.position.y };
+            const normalizedDir = { x: direction.x / distToTaunter, y: direction.y / distToTaunter };
+            const newPos = {x: enemy.position.x + normalizedDir.x * moveDistance, y: enemy.position.y + normalizedDir.y * moveDistance};
+            return { ...enemy, position: newPos };
+        }
+
+        const newSlowTimer = Math.max(0, enemy.slowTimer - msPerFrame);
+        const currentSpeed = enemy.slowTimer > 0 ? enemy.speed * 0.5 : enemy.speed; // 50% slow
+        const distanceToTravel = currentSpeed * timeDelta;
+        let currentPathIndex = enemy.pathIndex;
+        let newPosition = { ...enemy.position };
+        if (currentPathIndex < MAP_PATH.length - 1) {
+          const nextPathNodeScreen = gameToScreen(MAP_PATH[currentPathIndex + 1]);
+          const distanceToNextNode = getDistance(newPosition, nextPathNodeScreen);
+          if (distanceToNextNode < distanceToTravel) {
+              const remainingDistance = distanceToTravel - distanceToNextNode;
+              currentPathIndex++;
+               if (currentPathIndex >= MAP_PATH.length - 1) {
+                   enemiesWhoReachedEnd.push(enemy.id.toString());
+                   return null;
+               } else {
+                    const nextNextNode = gameToScreen(MAP_PATH[currentPathIndex + 1]);
+                    const directionToNext = {x: nextNextNode.x - nextPathNodeScreen.x, y: nextNextNode.y - nextPathNodeScreen.y};
+                    const distToNext = getDistance(nextPathNodeScreen, nextNextNode) || 1;
+                    const normalizedDir = {x: directionToNext.x / distToNext, y: directionToNext.y / distToNext};
+                    newPosition = { x: nextPathNodeScreen.x + normalizedDir.x * remainingDistance, y: nextPathNodeScreen.y + normalizedDir.y * remainingDistance };
+               }
+          } else {
+              const direction = { x: nextPathNodeScreen.x - newPosition.x, y: nextPathNodeScreen.y - newPosition.y };
+              const normalizedDir = { x: direction.x / distanceToNextNode, y: direction.y / distanceToNextNode };
+              newPosition.x += normalizedDir.x * distanceToTravel;
+              newPosition.y += normalizedDir.y * distanceToTravel;
+          }
+        } else {
+           enemiesWhoReachedEnd.push(enemy.id.toString());
+           return null;
+        }
+        return { ...enemy, position: newPosition, pathIndex: currentPathIndex, attackCooldown: 0, slowTimer: newSlowTimer };
+        
       }).filter((e): e is Enemy => e !== null);
       
       if (enemiesWhoReachedEnd.length > 0) {
@@ -914,7 +1017,7 @@ const App: React.FC = () => {
   }, [gameStatus, isPaused, currentWave, enemies, towers, projectiles, soldiers, hero, reinforcements, audioManager, selectedUnit, startNextWave]);
 
   return (
-    <div ref={containerRef} className="w-full h-full flex items-center justify-center">
+    <div ref={containerRef} className="w-full h-full flex items-center justify-center bg-black">
       <div 
         className="relative bg-gray-800 shadow-2xl overflow-hidden"
         style={{
@@ -922,11 +1025,16 @@ const App: React.FC = () => {
           height: GAME_CONFIG.height,
           transform: `scale(${scale})`,
           transformOrigin: 'center center',
+          touchAction: 'none',
         }}
-        onMouseDown={handleMapMouseDown}
-        onMouseMove={handleMapMouseMove}
-        onMouseUp={handleMapMouseUp}
+        onMouseDown={handleMapInteractionStart}
+        onMouseMove={handleMapInteractionMove}
+        onMouseUp={handleMapInteractionEnd}
+        onTouchStart={handleMapInteractionStart}
+        onTouchMove={handleMapInteractionMove}
+        onTouchEnd={handleMapInteractionEnd}
         onMouseLeave={cancelRallyPointDrag}
+        onTouchCancel={cancelRallyPointDrag}
       >
         <GameBoard
           towers={towers}
@@ -974,6 +1082,7 @@ const App: React.FC = () => {
           spellCooldowns={spellCooldowns}
           onCastSpell={handleCastSpell}
           gold={stats.gold}
+          hero={hero}
        />
         {(gameStatus === 'GAME_OVER' || gameStatus === 'VICTORY') && (
           <Modal status={gameStatus} onRestart={resetGame} />

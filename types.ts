@@ -3,9 +3,9 @@ export interface Vector2D {
   y: number;
 }
 
-export type TowerType = 'ARCHER' | 'MAGE' | 'BARRACKS' | 'ARTILLERY';
-export type EnemyType = 'GOBLIN' | 'ORC' | 'TROLL';
-export type ProjectileType = 'ARROW' | 'MAGIC_BOLT' | 'CANNONBALL';
+export type TowerType = 'WINTERFELL_WATCHTOWER' | 'WEIRWOOD_GROVE' | 'NORTHERN_BARRACKS' | 'SIEGE_WORKSHOP';
+export type EnemyType = 'ORC_GRUNT' | 'ORC_BERSERKER' | 'OGRE_BRUTE';
+export type ProjectileType = 'ICE_ARROW' | 'NATURE_BOLT' | 'CATAPULT_ROCK';
 
 export enum DamageType {
   PHYSICAL = 'PHYSICAL',
@@ -15,6 +15,7 @@ export enum DamageType {
 export enum ArmorType {
   NONE = 'NONE',
   PHYSICAL = 'PHYSICAL',
+  MAGIC = 'MAGIC',
 }
 
 export interface Tower {
@@ -41,6 +42,9 @@ export interface Enemy {
   isAttacking?: boolean;
   armorType: ArmorType;
   armorValue: number; // e.g., 0.3 for 30% reduction
+  speed: number;
+  slowTimer: number; // in ms
+  tauntedBy?: number | null;
 }
 
 export interface Projectile {
@@ -53,6 +57,7 @@ export interface Projectile {
     damageType: DamageType;
     speed: number;
     splashRadius?: number;
+    slows?: { factor: number; duration: number };
 }
 
 export interface Soldier {
@@ -87,6 +92,8 @@ export interface Hero {
     isAttacking?: boolean;
     abilityCooldown: number;
     abilityActiveTimer: number;
+    armorType: ArmorType;
+    armorValue: number;
 }
 
 export interface Reinforcement {
@@ -106,6 +113,8 @@ export interface Explosion {
     position: Vector2D;
     radius: number;
     lifetime: number; // in ms
+    type: 'FIRE' | 'GENERIC' | 'DRAGON_BREATH';
+    angle?: number;
 }
 
 export interface GoldParticle {
@@ -130,4 +139,9 @@ export interface RallyPointDragState {
   startPosition: Vector2D;
   currentPosition: Vector2D;
   unitId: number;
+}
+
+export interface EnvironmentDecoration {
+  type: 'TREE_1' | 'TREE_2' | 'ROCK_1' | 'ROCK_2';
+  position: Vector2D; // Grid Position
 }

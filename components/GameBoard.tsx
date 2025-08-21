@@ -1,29 +1,35 @@
 import React from 'react';
-import { TOWER_SPOTS, GAME_CONFIG, MAP_PATH, HERO_STATS, TOWER_STATS, REINFORCEMENTS_STATS, HERO_START_GRID_POS } from '../constants';
-import type { Tower, Enemy, Vector2D, Projectile, Soldier, Hero, SelectableUnit, Reinforcement, Explosion, PlayerSpell, GoldParticle, RallyPointDragState } from '../types';
+import { TOWER_SPOTS, GAME_CONFIG, MAP_PATH, HERO_STATS, TOWER_STATS, REINFORCEMENTS_STATS, HERO_START_GRID_POS, ENVIRONMENT_DECORATIONS } from '../constants';
+import type { Tower, Enemy, Vector2D, Projectile, Soldier, Hero, SelectableUnit, Reinforcement, Explosion, PlayerSpell, GoldParticle, RallyPointDragState, EnvironmentDecoration } from '../types';
 import { gameToScreen } from '../utils';
 import { 
-    ArcherTowerIcon, 
-    MageTowerIcon, 
-    BarracksTowerIcon,
-    ArtilleryTowerIcon,
-    SoldierIcon, 
-    HeroIcon,
+    WinterfellWatchtowerIcon, 
+    WeirwoodGroveIcon, 
+    NorthernBarracksIcon,
+    SiegeWorkshopIcon,
+    NorthernSoldierIcon, 
+    BrienneIcon,
     EnemyIcon,
-    ArrowProjectileIcon, 
-    MagicBoltProjectileIcon,
-    CannonballProjectileIcon,
+    IceArrowProjectileIcon, 
+    NatureBoltProjectileIcon,
+    CatapultRockProjectileIcon,
     TowerSpotIcon,
     GameBackground,
     SelectionCircle,
     RallyPointRangeCircle,
     RallyPointFlag,
-    MilitiaIcon,
+    BannermanIcon,
     Explosion as ExplosionIcon,
     TargetCursor,
     CoinIcon,
     SkullIcon,
     BuffEffect,
+    SlowEffect,
+    TauntEffect,
+    TreeIcon1,
+    TreeIcon2,
+    RockIcon1,
+    RockIcon2,
 } from './icons';
 import { SOLDIER_STATS } from '../constants';
 
@@ -43,6 +49,31 @@ interface GameBoardProps {
   rallyPointDrag: RallyPointDragState | null;
 }
 
+const DecorationComponent: React.FC<{ decoration: EnvironmentDecoration }> = React.memo(({ decoration }) => {
+    let Icon;
+    switch(decoration.type) {
+        case 'TREE_1': Icon = TreeIcon1; break;
+        case 'TREE_2': Icon = TreeIcon2; break;
+        case 'ROCK_1': Icon = RockIcon1; break;
+        case 'ROCK_2': Icon = RockIcon2; break;
+    }
+    const screenPos = gameToScreen(decoration.position);
+
+    return (
+        <div 
+            className="absolute transform -translate-x-1/2 -translate-y-[85%]"
+            style={{
+                left: screenPos.x,
+                top: screenPos.y,
+                zIndex: Math.floor(screenPos.y),
+                pointerEvents: 'none',
+            }}
+        >
+            <Icon />
+        </div>
+    );
+});
+
 const EnemyComponent: React.FC<{ enemy: Enemy; onSelect: (e: Enemy) => void }> = React.memo(({ enemy, onSelect }) => {
   const healthPercentage = (enemy.health / enemy.maxHealth) * 100;
   
@@ -56,6 +87,7 @@ const EnemyComponent: React.FC<{ enemy: Enemy; onSelect: (e: Enemy) => void }> =
       }}
       onMouseDown={(e) => { e.stopPropagation(); onSelect(enemy); }}
     >
+      {enemy.slowTimer > 0 && <SlowEffect />}
       <EnemyIcon type={enemy.type} isAttacking={enemy.isAttacking}/>
       <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-black rounded-full overflow-hidden border border-gray-600">
         <div className="h-full bg-red-500 rounded-full" style={{ width: `${healthPercentage}%` }} />
@@ -67,10 +99,10 @@ const EnemyComponent: React.FC<{ enemy: Enemy; onSelect: (e: Enemy) => void }> =
 const TowerComponent: React.FC<{ tower: Tower, onSelect: (t: Tower) => void }> = ({ tower, onSelect }) => {
   let TowerIcon: React.FC<any>;
   switch(tower.type) {
-    case 'ARCHER': TowerIcon = ArcherTowerIcon; break;
-    case 'MAGE': TowerIcon = MageTowerIcon; break;
-    case 'BARRACKS': TowerIcon = BarracksTowerIcon; break;
-    case 'ARTILLERY': TowerIcon = ArtilleryTowerIcon; break;
+    case 'WINTERFELL_WATCHTOWER': TowerIcon = WinterfellWatchtowerIcon; break;
+    case 'WEIRWOOD_GROVE': TowerIcon = WeirwoodGroveIcon; break;
+    case 'NORTHERN_BARRACKS': TowerIcon = NorthernBarracksIcon; break;
+    case 'SIEGE_WORKSHOP': TowerIcon = SiegeWorkshopIcon; break;
     default: return null;
   }
 
@@ -120,7 +152,7 @@ const SoldierComponent: React.FC<{ soldier: Soldier; onSelect: (s: Soldier) => v
       onMouseDown={(e) => { e.stopPropagation(); onSelect(soldier); }}
     >
         {soldier.isBuffed && <BuffEffect />}
-        <SoldierIcon isAttacking={soldier.isAttacking} />
+        <NorthernSoldierIcon isAttacking={soldier.isAttacking} />
         <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-6 h-1 bg-black rounded-full overflow-hidden border border-gray-500">
             <div className="h-full bg-blue-500 rounded-full" style={{ width: `${healthPercentage}%` }} />
         </div>
@@ -143,7 +175,7 @@ const ReinforcementComponent: React.FC<{ reinforcement: Reinforcement }> = React
           }}
         >
             {reinforcement.isBuffed && <BuffEffect />}
-            <MilitiaIcon isAttacking={reinforcement.isAttacking} />
+            <BannermanIcon isAttacking={reinforcement.isAttacking} />
             <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-6 h-1 bg-black rounded-full overflow-hidden border border-gray-500">
                 <div className="h-full bg-green-400 rounded-full" style={{ width: `${healthPercentage}%` }} />
             </div>
@@ -166,7 +198,7 @@ const HeroComponent: React.FC<{ hero: Hero, onSelect: (h: Hero) => void }> = Rea
             </div>
         )
     }
-    const isAbilityActive = hero.abilityActiveTimer > 0;
+
     const healthPercentage = (hero.health / hero.maxHealth) * 100;
     return (
         <div
@@ -178,8 +210,8 @@ const HeroComponent: React.FC<{ hero: Hero, onSelect: (h: Hero) => void }> = Rea
             }}
             onMouseDown={(e) => { e.stopPropagation(); onSelect(hero); }}
         >
-            {isAbilityActive && <BuffEffect size={80}/>}
-            <HeroIcon isAttacking={!!hero.isAttacking} />
+            {hero.abilityActiveTimer > 0 && <TauntEffect />}
+            <BrienneIcon isAttacking={!!hero.isAttacking} />
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-10 h-1.5 bg-black rounded-full overflow-hidden border border-gray-500">
                 <div className="h-full bg-green-500 rounded-full" style={{ width: `${healthPercentage}%` }} />
             </div>
@@ -191,9 +223,9 @@ const HeroComponent: React.FC<{ hero: Hero, onSelect: (h: Hero) => void }> = Rea
 const ProjectileComponent: React.FC<{ projectile: Projectile }> = ({ projectile }) => {
     let ProjectileIcon;
     switch (projectile.type) {
-        case 'ARROW': ProjectileIcon = ArrowProjectileIcon; break;
-        case 'MAGIC_BOLT': ProjectileIcon = MagicBoltProjectileIcon; break;
-        case 'CANNONBALL': ProjectileIcon = CannonballProjectileIcon; break;
+        case 'ICE_ARROW': ProjectileIcon = IceArrowProjectileIcon; break;
+        case 'NATURE_BOLT': ProjectileIcon = NatureBoltProjectileIcon; break;
+        case 'CATAPULT_ROCK': ProjectileIcon = CatapultRockProjectileIcon; break;
         default: return null;
     }
     return (
@@ -280,7 +312,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   };
 
   const selectionPosition = selectedUnit ? ('level' in selectedUnit ? gameToScreen(selectedUnit.position) : selectedUnit.position) : null;
-  const isBarracksSelected = selectedUnit && 'type' in selectedUnit && selectedUnit.type === 'BARRACKS';
+  const isBarracksSelected = selectedUnit && 'type' in selectedUnit && selectedUnit.type === 'NORTHERN_BARRACKS';
   const showExitWarning = enemies.some(e => e.pathIndex >= MAP_PATH.length - 4);
 
   return (
@@ -291,6 +323,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     >
         <GameBackground className="absolute inset-0 w-full h-full" />
         
+        {ENVIRONMENT_DECORATIONS.map((deco, i) => <DecorationComponent key={`deco-${i}`} decoration={deco} />)}
+
         {TOWER_SPOTS.map((spot, i) => {
           const screenPos = gameToScreen(spot);
           const isOccupied = towers.some(t => t.position.x === spot.x && t.position.y === spot.y);
@@ -315,7 +349,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         <>
             <RallyPointRangeCircle 
                 position={gameToScreen((selectedUnit as Tower).position)} 
-                range={TOWER_STATS.BARRACKS[(selectedUnit as Tower).level -1].range} 
+                range={TOWER_STATS.NORTHERN_BARRACKS[(selectedUnit as Tower).level -1].range} 
             />
             {(selectedUnit as Tower).rallyPoint && (
                 <RallyPointFlag position={gameToScreen((selectedUnit as Tower).rallyPoint!)} />
@@ -331,7 +365,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       <HeroComponent hero={hero} onSelect={onSelectUnit} />
       {enemies.map(enemy => <EnemyComponent key={`enemy-${enemy.id}`} enemy={enemy} onSelect={onSelectUnit} />)}
       {projectiles.map(projectile => <ProjectileComponent key={projectile.id} projectile={projectile}/>)}
-      {explosions.map(exp => <ExplosionIcon key={exp.id} position={exp.position} radius={exp.radius}/>)}
+      {explosions.map(exp => {
+        return <ExplosionIcon key={exp.id} position={exp.position} radius={exp.radius}/>
+      })}
       {goldParticles.map(p => <GoldParticleComponent key={p.id} particle={p} />)}
 
       {activeSpell && cursorPos && <TargetCursor position={cursorPos} spell={activeSpell} />}
