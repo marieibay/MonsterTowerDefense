@@ -43,16 +43,17 @@ export const TOWER_SPOTS: Vector2D[] = [
 ];
 
 export const ENVIRONMENT_DECORATIONS: EnvironmentDecoration[] = [
-    { type: 'TREE_1', position: { x: -8, y: 12 } },
-    { type: 'TREE_2', position: { x: 0, y: 19 } },
-    { type: 'ROCK_1', position: { x: 4, y: 17 } },
-    { type: 'TREE_1', position: { x: 8, y: 12 } },
-    { type: 'ROCK_2', position: { x: 13, y: 15 } },
-    { type: 'TREE_2', position: { x: 17, y: 24 } },
-    { type: 'ROCK_1', position: { x: 20, y: 17 } },
-    { type: 'TREE_1', position: { x: 26, y: 12 } },
-    { type: 'ROCK_2', position: { x: 32, y: 17 } },
-    { type: 'TREE_2', position: { x: 38, y: 13 } },
+    // These are now baked into the background image for a more integrated look
+    // { type: 'TREE_1', position: { x: -8, y: 12 } },
+    // { type: 'TREE_2', position: { x: 0, y: 19 } },
+    // { type: 'ROCK_1', position: { x: 4, y: 17 } },
+    // { type: 'TREE_1', position: { x: 8, y: 12 } },
+    // { type: 'ROCK_2', position: { x: 13, y: 15 } },
+    // { type: 'TREE_2', position: { x: 17, y: 24 } },
+    // { type: 'ROCK_1', position: { x: 20, y: 17 } },
+    // { type: 'TREE_1', position: { x: 26, y: 12 } },
+    // { type: 'ROCK_2', position: { x: 32, y: 17 } },
+    // { type: 'TREE_2', position: { x: 38, y: 13 } },
 ];
 
 interface TowerLevelStats {

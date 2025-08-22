@@ -46,7 +46,7 @@ const getUnitPortrait = (unit: SelectableUnit) => {
     if ('pathIndex' in unit) {
         return <EnemyPortrait type={unit.type} className="w-full h-full" />;
     }
-    return <BriennePortrait className="w-full h-full" />;
+    return <BriennePortrait />;
 }
 
 const SelectionDetails: React.FC<{

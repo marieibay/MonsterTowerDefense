@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { TOWER_SPOTS, GAME_CONFIG, MAP_PATH, HERO_STATS, TOWER_STATS, REINFORCEMENTS_STATS, HERO_START_GRID_POS, ENVIRONMENT_DECORATIONS } from '../constants';
 import type { Tower, Enemy, Vector2D, Projectile, Soldier, Hero, SelectableUnit, Reinforcement, Explosion, PlayerSpell, GoldParticle, RallyPointDragState, EnvironmentDecoration } from '../types';
@@ -118,7 +119,7 @@ const TowerComponent: React.FC<{ tower: Tower, onSelect: (t: Tower) => void }> =
       }}
       onMouseDown={(e) => { e.stopPropagation(); onSelect(tower); }}
     >
-      <TowerIcon isAttacking={tower.isAttacking} level={tower.level} />
+      <TowerIcon isAttacking={tower.isAttacking} level={tower.level} spawnCounter={tower.spawnCounter} />
     </div>
   );
 };
@@ -152,7 +153,7 @@ const SoldierComponent: React.FC<{ soldier: Soldier; onSelect: (s: Soldier) => v
       onMouseDown={(e) => { e.stopPropagation(); onSelect(soldier); }}
     >
         {soldier.isBuffed && <BuffEffect />}
-        <NorthernSoldierIcon isAttacking={soldier.isAttacking} />
+        <NorthernSoldierIcon animationState={soldier.animationState} direction={soldier.direction} />
         <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-6 h-1 bg-black rounded-full overflow-hidden border border-gray-500">
             <div className="h-full bg-blue-500 rounded-full" style={{ width: `${healthPercentage}%` }} />
         </div>
@@ -211,7 +212,7 @@ const HeroComponent: React.FC<{ hero: Hero, onSelect: (h: Hero) => void }> = Rea
             onMouseDown={(e) => { e.stopPropagation(); onSelect(hero); }}
         >
             {hero.abilityActiveTimer > 0 && <TauntEffect />}
-            <BrienneIcon isAttacking={!!hero.isAttacking} />
+            <BrienneIcon animationState={hero.animationState} direction={hero.direction} />
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-10 h-1.5 bg-black rounded-full overflow-hidden border border-gray-500">
                 <div className="h-full bg-green-500 rounded-full" style={{ width: `${healthPercentage}%` }} />
             </div>

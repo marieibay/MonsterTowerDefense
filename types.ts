@@ -1,3 +1,4 @@
+
 export interface Vector2D {
   x: number;
   y: number;
@@ -28,6 +29,7 @@ export interface Tower {
   rallyPoint?: Vector2D; // Grid Position
   isAttacking?: boolean;
   damageType: DamageType;
+  spawnCounter?: number;
 }
 
 export interface Enemy {
@@ -60,6 +62,8 @@ export interface Projectile {
     slows?: { factor: number; duration: number };
 }
 
+export type SoldierAnimationState = 'idle' | 'walk' | 'attack' | 'die';
+
 export interface Soldier {
     id: number;
     name: string;
@@ -74,8 +78,12 @@ export interface Soldier {
     targetId: number | null;
     respawnTimer: number; // in ms
     isBuffed?: boolean;
-    isAttacking?: boolean;
+    animationState: SoldierAnimationState;
+    direction: 'left' | 'right';
+    deathAnimTimer?: number;
 }
+
+export type HeroAnimationState = 'idle' | 'walk' | 'attack' | 'die';
 
 export interface Hero {
     id: number;
@@ -89,11 +97,12 @@ export interface Hero {
     targetId: number | null;
     respawnTimer: number; // in ms
     rallyPoint: Vector2D; // Screen Position
-    isAttacking?: boolean;
     abilityCooldown: number;
     abilityActiveTimer: number;
     armorType: ArmorType;
     armorValue: number;
+    animationState: HeroAnimationState;
+    direction: 'left' | 'right';
 }
 
 export interface Reinforcement {

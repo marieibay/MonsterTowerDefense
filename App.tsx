@@ -70,11 +70,12 @@ const App: React.FC = () => {
     targetId: null,
     respawnTimer: 0,
     rallyPoint: gameToScreen(HERO_START_GRID_POS),
-    isAttacking: false,
     abilityCooldown: 0,
     abilityActiveTimer: 0,
     armorType: HERO_STATS.armorType,
     armorValue: HERO_STATS.armorValue,
+    animationState: 'idle',
+    direction: 'right',
   });
   const [selectedSpot, setSelectedSpot] = useState<Vector2D | null>(null);
   const [selectedUnit, setSelectedUnit] = useState<SelectableUnit | null>(null);
@@ -166,11 +167,12 @@ const App: React.FC = () => {
         targetId: null,
         respawnTimer: 0,
         rallyPoint: gameToScreen(HERO_START_GRID_POS),
-        isAttacking: false,
         abilityCooldown: 0,
         abilityActiveTimer: 0,
         armorType: HERO_STATS.armorType,
         armorValue: HERO_STATS.armorValue,
+        animationState: 'idle',
+        direction: 'right',
     });
     setSelectedSpot(null);
     setSelectedUnit(null);
@@ -242,6 +244,7 @@ const App: React.FC = () => {
         targetId: null,
         isAttacking: false,
         damageType: TOWER_STATS[towerType][0].damageType,
+        spawnCounter: 0,
       };
 
       if (towerType === 'NORTHERN_BARRACKS') {
@@ -268,7 +271,8 @@ const App: React.FC = () => {
                   attackCooldown: 0,
                   targetId: null,
                   respawnTimer: 0,
-                  isAttacking: false,
+                  animationState: 'idle',
+                  direction: 'right',
               });
           }
           setSoldiers(prev => [...prev, ...newSoldiers]);
@@ -480,17 +484,26 @@ const App: React.FC = () => {
     setRallyPointDrag(null);
   }, []);
   
-  const setAttackingState = (unitId: number | string, isAttacking: boolean, duration: number) => {
+  const setAttackingState = (unitId: number | string, duration: number) => {
      const timerKey = `${unitId}`;
      const existingTimer = animationTimers.current.get(timerKey);
      if(existingTimer) clearTimeout(existingTimer);
+     
+     if (typeof unitId === 'number' && unitId === hero.id) {
+         setHero(h => h.id === unitId ? { ...h, animationState: 'attack' } : h);
+     } else {
+         setSoldiers(prev => prev.map(u => u.id === unitId ? { ...u, animationState: 'attack' } : u));
+     }
 
      const newTimer = setTimeout(() => {
-         setEnemies(prev => prev.map(u => u.id === unitId ? { ...u, isAttacking: false } : u));
          setTowers(prev => prev.map(u => u.id === unitId ? { ...u, isAttacking: false } : u));
-         setSoldiers(prev => prev.map(u => u.id === unitId ? { ...u, isAttacking: false } : u));
          setReinforcements(prev => prev.map(u => u.id === unitId ? { ...u, isAttacking: false } : u));
-         setHero(h => h.id === unitId ? { ...h, isAttacking: false } : h);
+         if (typeof unitId === 'number' && unitId === hero.id) {
+            setHero(h => h.id === unitId ? { ...h, animationState: 'idle' } : h);
+         } else {
+            setSoldiers(prev => prev.map(u => u.id === unitId ? { ...u, animationState: 'idle' } : u));
+         }
+
          animationTimers.current.delete(timerKey);
      }, duration);
      animationTimers.current.set(timerKey, newTimer);
@@ -583,12 +596,16 @@ const App: React.FC = () => {
           : HERO_STATS.armorValue;
       currentHero.armorValue = Math.min(0.9, currentArmorValue);
 
-      if (currentHero.respawnTimer > 0) {
+      if (currentHero.animationState === 'die') {
+        // Hero is in death animation, do nothing else
+      }
+      else if (currentHero.respawnTimer > 0) {
         currentHero.respawnTimer = Math.max(0, currentHero.respawnTimer - msPerFrame);
         if (currentHero.respawnTimer <= 0) {
             currentHero.health = currentHero.maxHealth;
             currentHero.position = gameToScreen(HERO_START_GRID_POS);
             currentHero.rallyPoint = gameToScreen(HERO_START_GRID_POS);
+            currentHero.animationState = 'idle';
         }
     } else if (currentHero.health > 0) {
         let newHeroTargetId = currentHero.targetId;
@@ -596,17 +613,14 @@ const App: React.FC = () => {
 
         const currentTarget = newHeroTargetId ? currentEnemies.find(e => e.id === newHeroTargetId) : undefined;
         
-        // Drop target if it's dead or moves out of patrol range from the RALLY POINT
         if (!currentTarget || getDistance(currentHero.rallyPoint, currentTarget.position) > HERO_STATS.patrolRange) {
             newHeroTargetId = null;
         }
 
-        // Find a new target if we don't have one
         if (!newHeroTargetId) {
             let potentialTarget: Enemy | null = null;
             let minDistance = Infinity;
             for (const enemy of currentEnemies) {
-                // Only consider enemies within patrol range of the RALLY POINT
                 if (enemy.health > 0) {
                     const distanceToRally = getDistance(currentHero.rallyPoint, enemy.position);
                     if (distanceToRally <= HERO_STATS.patrolRange) {
@@ -624,12 +638,11 @@ const App: React.FC = () => {
         const targetEnemy = newHeroTargetId ? currentEnemies.find(e => e.id === newHeroTargetId) : null;
         const distanceToRally = getDistance(currentHero.position, currentHero.rallyPoint);
 
-        // Has a valid target
         if (targetEnemy) {
             const distanceToTarget = getDistance(currentHero.position, targetEnemy.position);
 
-            // Target is in melee range -> ATTACK
             if (distanceToTarget <= HERO_STATS.range) {
+                currentHero.animationState = 'idle';
                 if (newAttackCooldown <= 0) {
                     audioManager.playSound('heroAttack');
                     const targetIndex = currentEnemies.findIndex(e => e.id === newHeroTargetId);
@@ -639,27 +652,30 @@ const App: React.FC = () => {
                         currentEnemies[targetIndex] = { ...targetEnemy, health: targetEnemy.health - damage };
                     }
                     currentHero.attackCooldown = HERO_STATS.attackRate;
-                    currentHero.isAttacking = true;
-                    setAttackingState(currentHero.id, true, 300);
+                    setAttackingState(currentHero.id, 400);
                 }
             } 
-            // Target is out of melee range -> CHASE
             else {
+                currentHero.animationState = 'walk';
                 const moveDistance = HERO_STATS.speed * timeDelta;
                 const direction = { x: targetEnemy.position.x - currentHero.position.x, y: targetEnemy.position.y - currentHero.position.y };
+                currentHero.direction = direction.x >= 0 ? 'right' : 'left';
                 const normalizedDir = { x: direction.x / distanceToTarget, y: direction.y / distanceToTarget };
                 currentHero.position.x += normalizedDir.x * moveDistance;
                 currentHero.position.y += normalizedDir.y * moveDistance;
             }
         } 
-        // No target, return to rally point
         else {
             if (distanceToRally > 5) {
+                currentHero.animationState = 'walk';
                 const moveDistance = HERO_STATS.speed * timeDelta;
                 const direction = { x: currentHero.rallyPoint.x - currentHero.position.x, y: currentHero.rallyPoint.y - currentHero.position.y };
+                currentHero.direction = direction.x >= 0 ? 'right' : 'left';
                 const normalizedDir = { x: direction.x / distanceToRally, y: direction.y / distanceToRally };
                 currentHero.position.x += normalizedDir.x * moveDistance;
                 currentHero.position.y += normalizedDir.y * moveDistance;
+            } else {
+                 currentHero.animationState = 'idle';
             }
         }
         currentHero.targetId = newHeroTargetId;
@@ -702,7 +718,9 @@ const App: React.FC = () => {
                 slows: towerLevelStats.slows,
               });
               
-              setAttackingState(tower.id, true, 300);
+              setTowers(prev => prev.map(u => u.id === tower.id ? { ...u, isAttacking: true } : u));
+              setTimeout(() => setTowers(prev => prev.map(u => u.id === tower.id ? { ...u, isAttacking: false } : u)), 300);
+              
               return { ...tower, cooldown: towerLevelStats.fireRate, targetId: newTargetId, isAttacking: true };
             }
           }
@@ -713,53 +731,108 @@ const App: React.FC = () => {
       currentSoldiers = currentSoldiers.map(soldier => {
         if (soldier.respawnTimer > 0) {
             const newRespawnTimer = Math.max(0, soldier.respawnTimer - msPerFrame);
-            if (newRespawnTimer <= 0) return { ...soldier, health: soldier.maxHealth, position: { ...soldier.rallyPoint! }, respawnTimer: 0, isAttacking: false };
+            if (newRespawnTimer <= 0) {
+                // Soldier has respawned. Trigger barracks animation.
+                const barracksIndex = currentTowers.findIndex(t => t.id === soldier.barracksId);
+                if (barracksIndex > -1) {
+                    const currentCounter = currentTowers[barracksIndex].spawnCounter || 0;
+                    currentTowers[barracksIndex] = {...currentTowers[barracksIndex], spawnCounter: currentCounter + 1};
+                }
+                return { ...soldier, health: soldier.maxHealth, position: { ...soldier.rallyPoint! }, respawnTimer: 0, animationState: 'idle' };
+            }
             return { ...soldier, respawnTimer: newRespawnTimer };
         }
-        if (soldier.health <= 0) return { ...soldier, respawnTimer: SOLDIER_STATS.respawnTime, targetId: null, isAttacking: false };
+
+        if (soldier.deathAnimTimer !== undefined && soldier.deathAnimTimer > 0) {
+            const newTimer = soldier.deathAnimTimer - msPerFrame;
+            if (newTimer <= 0) {
+                // Death animation is over, start respawn
+                return { ...soldier, deathAnimTimer: 0, respawnTimer: SOLDIER_STATS.respawnTime };
+            }
+            // Still dying, update timer and do nothing else
+            return { ...soldier, deathAnimTimer: newTimer };
+        }
+        
+        if (soldier.health <= 0) {
+            // Start death animation sequence if not already dying
+            if (soldier.animationState !== 'die') {
+                return { ...soldier, animationState: 'die', targetId: null, deathAnimTimer: 600 };
+            }
+            return soldier;
+        }
+
+        // if soldier is alive, it must not be dying or respawning, so its animationState should not be 'die'
+        if (soldier.animationState === 'die') {
+            return soldier;
+        }
 
         let newTargetId = soldier.targetId;
         const newAttackCooldown = Math.max(0, soldier.attackCooldown - msPerFrame);
-        const currentTarget = newTargetId ? currentEnemies.find(e => e.id === newTargetId) : undefined;
-        if (!currentTarget || getDistance(soldier.position, currentTarget.position) > SOLDIER_STATS.range) newTargetId = null;
-        if (!newTargetId) {
-            let potentialTarget: Enemy | null = null;
-            let minDistance = SOLDIER_STATS.range;
-            for (const enemy of currentEnemies) {
-                if (enemy.health > 0) {
-                    const distance = getDistance(soldier.position, enemy.position);
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        potentialTarget = enemy;
-                    }
-                }
-            }
-            if (potentialTarget) newTargetId = potentialTarget.id;
+        
+        let targetEnemy = newTargetId ? currentEnemies.find(e => e.id === newTargetId) : undefined;
+        
+        if (!targetEnemy || getDistance(soldier.position, targetEnemy.position) > SOLDIER_STATS.range) {
+             newTargetId = null;
+             let potentialTarget: Enemy | null = null;
+             let minDistance = SOLDIER_STATS.range;
+             for (const enemy of currentEnemies) {
+                 if (enemy.health > 0) {
+                     const distance = getDistance(soldier.position, enemy.position);
+                     if (distance < minDistance) {
+                         minDistance = distance;
+                         potentialTarget = enemy;
+                     }
+                 }
+             }
+             if (potentialTarget) {
+                 newTargetId = potentialTarget.id;
+                 targetEnemy = potentialTarget;
+             }
         }
-        if (newTargetId) {
-            if (newAttackCooldown <= 0) {
-                audioManager.playSound('soldierAttack');
-                const targetIndex = currentEnemies.findIndex(e => e.id === newTargetId);
-                if (targetIndex !== -1) {
-                    const enemy = currentEnemies[targetIndex];
-                    let damage = SOLDIER_STATS.damage;
-                    if(enemy.armorType === 'PHYSICAL') damage *= (1 - enemy.armorValue);
-                    currentEnemies[targetIndex] = { ...enemy, health: enemy.health - damage };
+        
+        let newAnimationState = soldier.animationState;
+        let newDirection = soldier.direction;
+        
+        if (targetEnemy) {
+            const distanceToTarget = getDistance(soldier.position, targetEnemy.position);
+             if (distanceToTarget <= SOLDIER_STATS.blockingRadius + 5) {
+                newAnimationState = 'idle';
+                if (newAttackCooldown <= 0) {
+                    audioManager.playSound('soldierAttack');
+                    const targetIndex = currentEnemies.findIndex(e => e.id === newTargetId);
+                    if (targetIndex !== -1) {
+                        const enemy = currentEnemies[targetIndex];
+                        let damage = SOLDIER_STATS.damage;
+                        if(enemy.armorType === 'PHYSICAL') damage *= (1 - enemy.armorValue);
+                        currentEnemies[targetIndex] = { ...enemy, health: enemy.health - damage };
+                    }
+                    setAttackingState(soldier.id, 400);
+                    return { ...soldier, attackCooldown: SOLDIER_STATS.attackRate, targetId: newTargetId };
                 }
-                setAttackingState(soldier.id, true, 300);
-                return { ...soldier, attackCooldown: SOLDIER_STATS.attackRate, targetId: newTargetId, isAttacking: true };
-            }
+             } else {
+                 newAnimationState = 'walk';
+                 const moveDistance = SOLDIER_STATS.speed * timeDelta;
+                 const directionVec = { x: targetEnemy.position.x - soldier.position.x, y: targetEnemy.position.y - soldier.position.y };
+                 newDirection = directionVec.x >= 0 ? 'right' : 'left';
+                 const normalizedDir = { x: directionVec.x / distanceToTarget, y: directionVec.y / distanceToTarget };
+                 soldier.position.x += normalizedDir.x * moveDistance;
+                 soldier.position.y += normalizedDir.y * moveDistance;
+             }
         } else {
             const distanceToRally = getDistance(soldier.position, soldier.rallyPoint!);
             if (distanceToRally > 5) {
+                newAnimationState = 'walk';
                 const moveDistance = SOLDIER_STATS.speed * timeDelta;
-                const direction = { x: soldier.rallyPoint!.x - soldier.position.x, y: soldier.rallyPoint!.y - soldier.position.y };
-                const normalizedDir = { x: direction.x / distanceToRally, y: direction.y / distanceToRally };
+                const directionVec = { x: soldier.rallyPoint!.x - soldier.position.x, y: soldier.rallyPoint!.y - soldier.position.y };
+                newDirection = directionVec.x >= 0 ? 'right' : 'left';
+                const normalizedDir = { x: directionVec.x / distanceToRally, y: directionVec.y / distanceToRally };
                 soldier.position.x += normalizedDir.x * moveDistance;
                 soldier.position.y += normalizedDir.y * moveDistance;
+            } else {
+                newAnimationState = 'idle';
             }
         }
-        return { ...soldier, attackCooldown: newAttackCooldown, targetId: newTargetId };
+        return { ...soldier, attackCooldown: newAttackCooldown, targetId: newTargetId, animationState: newAnimationState, direction: newDirection };
     });
 
       currentReinforcements = currentReinforcements.map(r => {
@@ -786,7 +859,8 @@ const App: React.FC = () => {
                       if(enemy.armorType === 'PHYSICAL') damage *= (1 - enemy.armorValue);
                       currentEnemies[targetIndex] = {...enemy, health: enemy.health - damage };
                   }
-                  setAttackingState(r.id, true, 300);
+                  setReinforcements(prev => prev.map(u => u.id === r.id ? { ...u, isAttacking: true } : u));
+                  setTimeout(() => setReinforcements(prev => prev.map(u => u.id === r.id ? { ...u, isAttacking: false } : u)), 300);
                   return { ...r, attackCooldown: REINFORCEMENTS_STATS.attackRate, targetId: newTargetId, isAttacking: true };
               }
           }
@@ -859,7 +933,7 @@ const App: React.FC = () => {
         if (!isBlocked) {
             const allMeleeUnits: (Soldier | Reinforcement)[] = [...currentSoldiers, ...currentReinforcements];
             allMeleeUnits.forEach(unit => {
-                if (unit.health > 0 && ('barracksId' in unit ? unit.respawnTimer <= 0 : true)) {
+                if (unit.health > 0 && ('barracksId' in unit ? unit.animationState !== 'die' && unit.respawnTimer <= 0 : true)) {
                     const dist = getDistance(enemy.position, unit.position);
                     const blockingRadius = 'barracksId' in unit ? SOLDIER_STATS.blockingRadius : REINFORCEMENTS_STATS.blockingRadius;
                     if (dist < blockingRadius && dist < closestDist) {
@@ -887,8 +961,12 @@ const App: React.FC = () => {
                      const heroBlocker = blocker as Hero;
                      damageDealt *= (1 - heroBlocker.armorValue);
                      heroBlocker.health = Math.max(0, heroBlocker.health - damageDealt);
-                     if (heroBlocker.health <= 0) { 
-                        heroBlocker.respawnTimer = HERO_STATS.respawnTime;
+                     if (heroBlocker.health <= 0) {
+                        heroBlocker.animationState = 'die';
+                        const dieAnimDuration = 600;
+                        setTimeout(() => {
+                            setHero(h => ({...h, respawnTimer: HERO_STATS.respawnTime}))
+                        }, dieAnimDuration);
                         audioManager.playSound('enemyDeath'); // a hero death sound
                      }
                 } else if (blockerType === 'soldier') {
@@ -898,7 +976,8 @@ const App: React.FC = () => {
                      const reinforcementIndex = currentReinforcements.findIndex(s => s.id === blocker!.id);
                     if (reinforcementIndex !== -1) currentReinforcements[reinforcementIndex].health = Math.max(0, currentReinforcements[reinforcementIndex].health - damageDealt);
                 }
-                setAttackingState(enemy.id, true, 300);
+                setEnemies(prev => prev.map(e => e.id === enemy.id ? {...e, isAttacking: true} : e));
+                setTimeout(() => setEnemies(prev => prev.map(e => e.id === enemy.id ? {...e, isAttacking: false} : e)), 300);
                 return { ...enemy, attackCooldown: enemyStats.attackRate, isAttacking: true };
             }
             return { ...enemy, attackCooldown: newAttackCooldown };
