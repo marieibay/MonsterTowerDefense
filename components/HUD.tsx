@@ -262,7 +262,7 @@ export const HUD: React.FC<HUDProps> = ({
                     ) : (
                         <>
                             <span>Call Early</span>
-                            <span className="text-xs -mt-1 text-yellow-300 block sm:inline"> (+{EARLY_WAVE_BONUS.gold}G / -{EARLY_WAVE_BONUS.cooldownReduction/1000}s CD)</span>
+                            <span className="text-xs -mt-1 text-yellow-300 block sm:inline whitespace-nowrap"> (+{EARLY_WAVE_BONUS.gold}G / -{EARLY_WAVE_BONUS.cooldownReduction/1000}s CD)</span>
                         </>
                     )}
                     </div>

@@ -455,36 +455,61 @@ export const BrienneIcon: React.FC<{ animationState: HeroAnimationState, directi
                 <linearGradient id="hero-armor-dark" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#bdbdbd"/><stop offset="50%" stopColor="#f5f5f5"/><stop offset="100%" stopColor="#bdbdbd"/></linearGradient>
                 <linearGradient id="hero-leg-dark" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#9e9e9e"/><stop offset="100%" stopColor="#546e7a"/></linearGradient>
                 <linearGradient id="hero-leg-light" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#bdbdbd"/><stop offset="100%" stopColor="#78909c"/></linearGradient>
-                <radialGradient id="shield-grad" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#fafafa"/><stop offset="100%" stopColor="#9e9e9e"/></radialGradient>
+                
+                {/* New Gradients */}
+                <linearGradient id="hero-skin" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#f5c29c"/><stop offset="50%" stopColor="#fcd3b2"/><stop offset="100%" stopColor="#f5c29c"/></linearGradient>
+                <linearGradient id="hero-hair" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#fff59d"/><stop offset="100%" stopColor="#fbc02d"/></linearGradient>
+                <linearGradient id="hero-tunic" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#546e7a"/><stop offset="100%" stopColor="#263238"/></linearGradient>
+                <linearGradient id="sword-blade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f5f5f5"/><stop offset="100%" stopColor="#bdbdbd"/></linearGradient>
             </defs>
             <style>{css}</style>
             <g className={animationState} transform={direction === 'left' ? 'scale(-1, 1) translate(-30, 0)' : ''}>
                 <g className="hero-group">
+                    {/* Legs */}
                     <g className="leg left-leg" style={{transformOrigin: '12px 23px'}}><path d="M11 35 L 14 35 L 14 27 L 11 25 Z" fill="url(#hero-leg-dark)" /><rect x="11" y="34" width="3" height="2" fill="#424242" /></g>
                     <g className="leg right-leg" style={{transformOrigin: '17px 23px'}}><path d="M16 35 L 19 35 L 19 25 L 16 27 Z" fill="url(#hero-leg-light)" /><rect x="16" y="34" width="3" height="2" fill="#616161" /></g>
+                    
                     <g className="body" style={{transformOrigin: '15px 25px'}}>
+                        {/* Shield Arm */}
                         <g className="arm left-arm" style={{transformOrigin: '12px 17px'}}>
-                           <ellipse cx="8" cy="22" rx="6" ry="7" fill="#616161" />
-                           <ellipse cx="8" cy="22" rx="4" ry="5" fill="url(#shield-grad)" />
-                           <ellipse cx="8" cy="22" rx="2" ry="3" fill="#ffd700" />
+                           <path d="M8 16 L 3 18 L 2 24 L 7 25 Z" fill="url(#hero-armor-dark)"/>
+                           {/* Shield */}
+                           <path d="M2 18 C -2 20, -2 30, 2 32 L 8 32 C 12 30, 12 20, 8 18 Z" fill="url(#hero-armor-dark)" stroke="#424242" strokeWidth="1"/>
+                           {/* Direwolf sigil */}
+                           <path d="M5 22 L 5 25 L 4 26 L 6 26 L 5 25 L 6 25 L 5 28 L 7 28 L 6 25 M7 23 L 6 22" stroke="#fafafa" strokeWidth="0.5" fill="none" />
                         </g>
-                        <path d="M10 26 L 20 26 L 22 15 L 8 15 Z" fill="url(#hero-armor-dark)" />
-                        <rect x="13" y="15" width="4" height="3" fill="#e57373" />
-                        <path d="M10 15 L 20 15 L 18 6 L 12 6 Z" fill="url(#hero-armor-light)" />
-                        <rect x="13" y="9" width="4" height="3" fill="#424242" />
-                        <path d="M11 6 L 19 6 L 15 1 Z" fill="#ffeb3b" stroke="#f9a825" />
-                        <path d="M13 1 L 17 1 L 17 -2 L 13 -2 Z" fill="#fdd835" />
+
+                        {/* Tunic & Torso */}
+                        <path d="M10 26 L 20 26 L 22 15 L 8 15 Z" fill="url(#hero-tunic)" />
+                        <path d="M10 24 L 20 24 L 21 16 L 9 16 Z" fill="url(#hero-armor-dark)" />
+                        <path d="M12 18 L 18 18 L 19 16 L 11 16 Z" fill="url(#hero-armor-light)" />
+
+                        {/* Head and Hair */}
+                        <path d="M12 15 L 18 15 L 17 9 L 13 9 Z" fill="url(#hero-skin)"/>
+                        <path d="M12 9 L 18 9 Q 18 4, 15 4 Q 12 4, 12 9 Z" fill="url(#hero-hair)" />
+                        <path d="M10 8 L 20 8 L 18 6 L 12 6 Z" fill="url(#hero-armor-light)" />
+                        
+                        {/* Sword Arm */}
                         <g className="arm right-arm" style={{transformOrigin: '18px 17px'}}>
                             <path d="M18 16 L 23 18 L 24 24 L 19 24 Z" fill="url(#hero-armor-dark)" />
-                            <rect x="23" y="10" width="4" height="18" fill="url(#hero-armor-light)" transform="rotate(15 25 19)"/>
-                            <rect x="24" y="8" width="2" height="6" fill="#795548"/>
+                            {/* Sword */}
+                            <g transform="rotate(15 25 19)">
+                                <rect x="23" y="0" width="2" height="22" fill="url(#sword-blade)"/>
+                                <rect x="21" y="20" width="6" height="2" fill="#795548"/>
+                                <rect x="23" y="22" width="2" height="2" fill="#a1887f"/>
+                            </g>
                         </g>
+
+                        {/* Pauldrons */}
+                        <ellipse cx="9" cy="16" rx="4" ry="3" fill="url(#hero-armor-light)"/>
+                        <ellipse cx="21" cy="16" rx="4" ry="3" fill="url(#hero-armor-light)"/>
                     </g>
                 </g>
             </g>
         </svg>
     );
 };
+
 
 export const BannermanIcon: React.FC<UnitProps> = ({ isAttacking, ...props }) => (
      <svg width="32" height="40" viewBox="0 0 16 20" {...props}>
