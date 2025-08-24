@@ -817,7 +817,7 @@ const App: React.FC = () => {
                         currentEnemies[targetIndex] = { ...enemy, health: enemy.health - damage };
                     }
                     setAttackingState(soldier.id, 400);
-                    return { ...soldier, attackCooldown: SOLDIER_STATS.attackRate, targetId: newTargetId };
+                    return { ...soldier, attackCooldown: SOLDIER_STATS.attackRate, targetId: newTargetId, animationState: 'attack' };
                 }
              } else {
                  newAnimationState = 'walk';
@@ -896,7 +896,7 @@ const App: React.FC = () => {
                         currentEnemies[targetIndex] = {...enemy, health: enemy.health - damage };
                     }
                     setAttackingState(r.id, 400);
-                    return { ...r, attackCooldown: REINFORCEMENTS_STATS.attackRate, targetId: newTargetId };
+                    return { ...r, attackCooldown: REINFORCEMENTS_STATS.attackRate, targetId: newTargetId, animationState: 'attack' };
                 }
             } else {
                 newAnimationState = 'walk';

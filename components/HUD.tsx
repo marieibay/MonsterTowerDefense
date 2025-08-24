@@ -266,7 +266,7 @@ export const HUD: React.FC<HUDProps> = ({
                         </>
                     )}
                     </div>
-                    {gameStatus === 'WAVE_COMPLETE' && <div className="absolute -bottom-5 sm:-bottom-4 text-base sm:text-lg text-white">{Math.ceil(nextWaveTimer/1000)}s</div>}
+                    {gameStatus === 'WAVE_COMPLETE' && nextWaveTimer > 0 && <div className="absolute -bottom-5 sm:-bottom-4 text-base sm:text-lg text-white">{Math.ceil(nextWaveTimer/1000)}s</div>}
                 </button>
             )}
         </div>
