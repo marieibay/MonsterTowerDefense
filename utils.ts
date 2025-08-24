@@ -18,20 +18,30 @@ export const gameToScreen = (gridPos: Vector2D): Vector2D => {
 export class AudioManager {
   private audioContext: AudioContext;
   private isMuted: boolean = false;
-  private musicSource: OscillatorNode | null = null;
-  private musicGain: GainNode;
+  private sfxGain: GainNode;
+  private musicElement: HTMLAudioElement;
 
   constructor() {
     this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    this.musicGain = this.audioContext.createGain();
-    this.musicGain.connect(this.audioContext.destination);
+    this.sfxGain = this.audioContext.createGain();
+    this.sfxGain.connect(this.audioContext.destination);
+
+    const musicEl = document.getElementById('bg-music');
+    if (musicEl instanceof HTMLAudioElement) {
+        this.musicElement = musicEl;
+        this.musicElement.volume = 0.3; // Set a default volume
+    } else {
+        console.error("Background music element not found or is not an audio element.");
+        // Create a dummy element to avoid errors
+        this.musicElement = document.createElement('audio');
+    }
   }
 
   private playTone(freq: number, duration: number, type: OscillatorType | 'noise' = 'square', volume: number = 0.5, decay: boolean = true) {
     if (this.isMuted || this.audioContext.state === 'suspended') return;
 
     const gainNode = this.audioContext.createGain();
-    gainNode.connect(this.audioContext.destination);
+    gainNode.connect(this.sfxGain);
     gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
     if(decay) {
         gainNode.gain.exponentialRampToValueAtTime(0.0001, this.audioContext.currentTime + duration);
@@ -133,45 +143,24 @@ export class AudioManager {
   }
 
   public playMusic() {
-    if (this.isMuted || this.musicSource) return;
+    if (this.isMuted) return;
     this.audioContext.resume();
-    
-    const notes = [130.81, 164.81, 196.00, 261.63, 196.00, 164.81]; // Simple C-E-G-C-G-E progression
-    let noteIndex = 0;
-    
-    const playNote = () => {
-        if (!this.musicSource) {
-            if(musicInterval) clearInterval(musicInterval);
-            return;
-        }
-        this.musicSource.frequency.setValueAtTime(notes[noteIndex % notes.length], this.audioContext.currentTime);
-        noteIndex++;
-    };
-
-    this.musicSource = this.audioContext.createOscillator();
-    this.musicSource.type = 'square';
-    this.musicGain.gain.setValueAtTime(0.08, this.audioContext.currentTime);
-    this.musicSource.connect(this.musicGain);
-    this.musicSource.start();
-
-    const musicInterval = setInterval(playNote, 400);
+    this.musicElement.play().catch(error => console.log("Music play was prevented.", error));
   }
 
   public stopMusic() {
-      if (this.musicSource) {
-          this.musicSource.stop();
-          this.musicSource.disconnect();
-          this.musicSource = null;
-      }
+      this.musicElement.pause();
+      this.musicElement.currentTime = 0;
   }
 
   public toggleMute(isMuted: boolean) {
     this.isMuted = isMuted;
+    this.musicElement.muted = isMuted;
     if (isMuted) {
-        this.musicGain.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 0.1);
+      this.sfxGain.gain.setValueAtTime(0, this.audioContext.currentTime);
     } else {
-        this.audioContext.resume();
-        this.musicGain.gain.linearRampToValueAtTime(0.08, this.audioContext.currentTime + 0.1);
+      this.audioContext.resume();
+      this.sfxGain.gain.setValueAtTime(1, this.audioContext.currentTime);
     }
   }
 }

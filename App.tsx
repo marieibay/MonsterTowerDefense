@@ -33,6 +33,7 @@ import type {
   GoldParticle,
   RallyPointDragState,
   ProjectileType,
+  GroundUnitAnimationState,
 } from './types';
 import { getDistance, AudioManager, gameToScreen } from './utils';
 import { MAP_PATH } from './constants';
@@ -108,15 +109,26 @@ const App: React.FC = () => {
   useEffect(() => {
     audioManager.toggleMute(isMuted);
   }, [isMuted, audioManager]);
+  
+  useEffect(() => {
+    // Autoplay for background music is often restricted by browsers.
+    // This effect starts the music when the first wave begins,
+    // which is triggered by a user click, ensuring compatibility.
+    if (gameStatus === 'WAVE_IN_PROGRESS' && currentWave === 1 && !isPaused) {
+      audioManager.playMusic();
+    }
+  }, [gameStatus, currentWave, isPaused, audioManager]);
 
   const waveSpawnData = useRef({ spawnIndex: 0, lastSpawnTime: 0 });
 
   const findClosestPathPoint = useCallback((point: Vector2D): Vector2D => {
       let closestPoint: Vector2D = {...MAP_PATH[0]};
       let minDistance = Infinity;
+      const screenPoint = gameToScreen(point);
 
       for(let i = 0; i < MAP_PATH.length; i++) {
-          const dist = getDistance(point, MAP_PATH[i]);
+          const pathScreenPoint = gameToScreen(MAP_PATH[i]);
+          const dist = getDistance(screenPoint, pathScreenPoint);
           if(dist < minDistance) {
               minDistance = dist;
               closestPoint = MAP_PATH[i];
@@ -200,10 +212,7 @@ const App: React.FC = () => {
     setGameStatus('WAVE_IN_PROGRESS');
     setCurrentWave(prev => prev + 1);
     deselectAll();
-    if(currentWave === 0) {
-       audioManager.playMusic();
-    }
-  }, [gameStatus, audioManager, currentWave]);
+  }, [gameStatus, audioManager]);
 
   const handleStartWave = useCallback((isEarly: boolean) => {
       if (isEarly) {
@@ -249,7 +258,6 @@ const App: React.FC = () => {
 
       if (towerType === 'NORTHERN_BARRACKS') {
           const rallyPoint = findClosestPathPoint(selectedSpot);
-          newTower.rallyPoint = rallyPoint;
           const newSoldiers: Soldier[] = [];
           for (let i = 0; i < SOLDIER_STATS.count; i++) {
               const angle = (i / SOLDIER_STATS.count) * 2 * Math.PI;
@@ -343,42 +351,6 @@ const App: React.FC = () => {
   const setRallyPoint = useCallback((screenPos: Vector2D) => {
     if (selectedUnit && 'health' in selectedUnit && selectedUnit.id === hero.id) {
        setHero(h => ({ ...h, rallyPoint: screenPos, targetId: null }));
-    } else if (selectedUnit && 'type' in selectedUnit && selectedUnit.type === 'NORTHERN_BARRACKS') {
-        const towerStats = TOWER_STATS.NORTHERN_BARRACKS[selectedUnit.level - 1];
-        const barracksScreenPos = gameToScreen(selectedUnit.position);
-        if (getDistance(barracksScreenPos, screenPos) <= towerStats.range) {
-            let closestGridPoint: Vector2D = {...MAP_PATH[0]};
-            let minDistance = Infinity;
-            for(const pathPoint of MAP_PATH) {
-                const pathScreenPos = gameToScreen(pathPoint);
-                const dist = getDistance(screenPos, pathScreenPos);
-                if(dist < minDistance) {
-                    minDistance = dist;
-                    closestGridPoint = pathPoint;
-                }
-            }
-
-            setTowers(prevTowers => prevTowers.map(t => 
-                t.id === selectedUnit.id ? {...t, rallyPoint: closestGridPoint} : t
-            ));
-            
-            setSoldiers(prevSoldiers => {
-                const newRallyScreenPos = gameToScreen(closestGridPoint);
-                return prevSoldiers.map((s) => {
-                    if (s.barracksId === selectedUnit.id) {
-                        const siblingSoldiers = prevSoldiers.filter(so => so.barracksId === selectedUnit.id);
-                        const soldierIndex = siblingSoldiers.findIndex(ss => ss.id === s.id);
-                        const angle = (soldierIndex / siblingSoldiers.length) * 2 * Math.PI;
-                        const individualRallyPoint = {
-                            x: newRallyScreenPos.x + Math.cos(angle) * 25,
-                            y: newRallyScreenPos.y + Math.sin(angle) * 25
-                        };
-                        return {...s, rallyPoint: individualRallyPoint};
-                    }
-                    return s;
-                });
-            });
-        }
     }
   }, [selectedUnit, hero.id]);
 
@@ -410,12 +382,6 @@ const App: React.FC = () => {
                 currentPosition: screenPos,
                 unitId: selectedUnit.id,
             });
-        } else if ('level' in selectedUnit && selectedUnit.type === 'NORTHERN_BARRACKS' && selectedUnit.rallyPoint) {
-            setRallyPointDrag({
-                startPosition: gameToScreen(selectedUnit.rallyPoint),
-                currentPosition: screenPos,
-                unitId: selectedUnit.id,
-            });
         }
     } else {
       deselectAll();
@@ -436,6 +402,8 @@ const App: React.FC = () => {
       if (activeSpell) {
           if (activeSpell === 'REINFORCEMENTS') {
               const newReinforcements: Reinforcement[] = [];
+              const closestPathGridPoint = findClosestPathPoint({x: screenPos.x / (GAME_CONFIG.tileWidth / 2), y: screenPos.y / (GAME_CONFIG.tileHeight / 2)});
+              const destination = gameToScreen(closestPathGridPoint);
               for(let i = 0; i < REINFORCEMENTS_STATS.count; i++) {
                   newReinforcements.push({
                       id: Date.now() + i,
@@ -445,7 +413,12 @@ const App: React.FC = () => {
                       targetId: null,
                       attackCooldown: 0,
                       lifetime: REINFORCEMENTS_STATS.duration,
-                      isAttacking: false,
+                      animationState: 'walk',
+                      direction: 'right',
+                      destination: destination,
+                      damage: REINFORCEMENTS_STATS.damage,
+                      range: REINFORCEMENTS_STATS.range,
+                      speed: REINFORCEMENTS_STATS.speed,
                   });
               }
               setReinforcements(r => [...r, ...newReinforcements]);
@@ -478,7 +451,7 @@ const App: React.FC = () => {
       } else if (!selectedUnit && !selectedSpot) {
           deselectAll();
       }
-  }, [rallyPointDrag, activeSpell, setRallyPoint, selectedUnit, selectedSpot, audioManager, getGameCoordinates]);
+  }, [rallyPointDrag, activeSpell, setRallyPoint, selectedUnit, selectedSpot, audioManager, getGameCoordinates, findClosestPathPoint]);
 
   const cancelRallyPointDrag = useCallback(() => {
     setRallyPointDrag(null);
@@ -491,15 +464,18 @@ const App: React.FC = () => {
      
      if (typeof unitId === 'number' && unitId === hero.id) {
          setHero(h => h.id === unitId ? { ...h, animationState: 'attack' } : h);
+     } else if (reinforcements.some(r => r.id === unitId)) {
+         setReinforcements(prev => prev.map(u => u.id === unitId ? { ...u, animationState: 'attack' } : u));
      } else {
          setSoldiers(prev => prev.map(u => u.id === unitId ? { ...u, animationState: 'attack' } : u));
      }
 
      const newTimer = setTimeout(() => {
          setTowers(prev => prev.map(u => u.id === unitId ? { ...u, isAttacking: false } : u));
-         setReinforcements(prev => prev.map(u => u.id === unitId ? { ...u, isAttacking: false } : u));
          if (typeof unitId === 'number' && unitId === hero.id) {
             setHero(h => h.id === unitId ? { ...h, animationState: 'idle' } : h);
+         } else if (reinforcements.some(r => r.id === unitId)) {
+            setReinforcements(prev => prev.map(u => u.id === unitId ? { ...u, animationState: 'idle' } : u));
          } else {
             setSoldiers(prev => prev.map(u => u.id === unitId ? { ...u, animationState: 'idle' } : u));
          }
@@ -510,7 +486,7 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    if (gameStatus !== 'WAVE_IN_PROGRESS' || isPaused) return;
+    if ((gameStatus !== 'WAVE_IN_PROGRESS' && gameStatus !== 'WAVE_COMPLETE') || isPaused) return;
 
     const intervalId = setInterval(() => {
       const now = Date.now();
@@ -558,24 +534,29 @@ const App: React.FC = () => {
       });
 
       const waveDefinition = WAVES[currentWave - 1];
-      if (waveDefinition && waveSpawnData.current.spawnIndex < waveDefinition.enemies.length) {
+      if (gameStatus === 'WAVE_IN_PROGRESS' && waveDefinition && waveSpawnData.current.spawnIndex < waveDefinition.enemies.length) {
           if (now - waveSpawnData.current.lastSpawnTime > waveDefinition.spawnRate) {
               const enemyType = waveDefinition.enemies[waveSpawnData.current.spawnIndex];
               const enemyStats = ENEMY_STATS[enemyType];
+              const pathOffset = (Math.random() - 0.5) * GAME_CONFIG.pathWidth;
+              const startPos = gameToScreen(MAP_PATH[0]);
+              startPos.y += pathOffset;
+
               const newEnemy: Enemy = {
                   id: Date.now() + Math.random(),
                   type: enemyType,
                   name: enemyStats.name,
-                  position: gameToScreen(MAP_PATH[0]),
+                  position: startPos,
                   health: enemyStats.health,
                   maxHealth: enemyStats.health,
                   pathIndex: 0,
                   armorType: enemyStats.armorType,
                   armorValue: enemyStats.armorValue,
                   attackCooldown: 0,
-                  isAttacking: false,
+                  animationState: 'walk',
                   speed: enemyStats.speed,
                   slowTimer: 0,
+                  pathOffset,
               };
               currentEnemies.push(newEnemy);
               waveSpawnData.current.spawnIndex++;
@@ -610,6 +591,8 @@ const App: React.FC = () => {
     } else if (currentHero.health > 0) {
         let newHeroTargetId = currentHero.targetId;
         const newAttackCooldown = Math.max(0, currentHero.attackCooldown - msPerFrame);
+        let newHeroPatrolTarget = currentHero.patrolTarget;
+        let newIdleTimer = Math.max(0, (currentHero.idleTimer || 0) - msPerFrame);
 
         const currentTarget = newHeroTargetId ? currentEnemies.find(e => e.id === newHeroTargetId) : undefined;
         
@@ -636,9 +619,9 @@ const App: React.FC = () => {
         }
         
         const targetEnemy = newHeroTargetId ? currentEnemies.find(e => e.id === newHeroTargetId) : null;
-        const distanceToRally = getDistance(currentHero.position, currentHero.rallyPoint);
 
         if (targetEnemy) {
+            newHeroPatrolTarget = undefined;
             const distanceToTarget = getDistance(currentHero.position, targetEnemy.position);
 
             if (distanceToTarget <= HERO_STATS.range) {
@@ -665,21 +648,37 @@ const App: React.FC = () => {
                 currentHero.position.y += normalizedDir.y * moveDistance;
             }
         } 
-        else {
-            if (distanceToRally > 5) {
-                currentHero.animationState = 'walk';
-                const moveDistance = HERO_STATS.speed * timeDelta;
-                const direction = { x: currentHero.rallyPoint.x - currentHero.position.x, y: currentHero.rallyPoint.y - currentHero.position.y };
-                currentHero.direction = direction.x >= 0 ? 'right' : 'left';
-                const normalizedDir = { x: direction.x / distanceToRally, y: direction.y / distanceToRally };
-                currentHero.position.x += normalizedDir.x * moveDistance;
-                currentHero.position.y += normalizedDir.y * moveDistance;
+        else { // No enemy, patrol
+            if (newHeroPatrolTarget) {
+                const distanceToTarget = getDistance(currentHero.position, newHeroPatrolTarget);
+                if (distanceToTarget < 10) {
+                    newHeroPatrolTarget = undefined;
+                    newIdleTimer = 1000 + Math.random() * 2000;
+                    currentHero.animationState = 'idle';
+                } else {
+                    currentHero.animationState = 'walk';
+                    const moveDistance = HERO_STATS.speed * timeDelta;
+                    const direction = { x: newHeroPatrolTarget.x - currentHero.position.x, y: newHeroPatrolTarget.y - currentHero.position.y };
+                    currentHero.direction = direction.x >= 0 ? 'right' : 'left';
+                    const normalizedDir = { x: direction.x / distanceToTarget, y: direction.y / distanceToTarget };
+                    currentHero.position.x += normalizedDir.x * moveDistance;
+                    currentHero.position.y += normalizedDir.y * moveDistance;
+                }
+            } else if (newIdleTimer <= 0) {
+                const angle = Math.random() * 2 * Math.PI;
+                const radius = Math.random() * HERO_STATS.patrolRadius;
+                newHeroPatrolTarget = {
+                    x: currentHero.rallyPoint.x + Math.cos(angle) * radius,
+                    y: currentHero.rallyPoint.y + Math.sin(angle) * radius,
+                };
             } else {
-                 currentHero.animationState = 'idle';
+                currentHero.animationState = 'idle';
             }
         }
         currentHero.targetId = newHeroTargetId;
         currentHero.attackCooldown = newAttackCooldown;
+        currentHero.patrolTarget = newHeroPatrolTarget;
+        currentHero.idleTimer = newIdleTimer;
     }
 
       currentTowers = currentTowers.map(tower => {
@@ -761,39 +760,50 @@ const App: React.FC = () => {
             return soldier;
         }
 
-        // if soldier is alive, it must not be dying or respawning, so its animationState should not be 'die'
         if (soldier.animationState === 'die') {
             return soldier;
         }
 
         let newTargetId = soldier.targetId;
         const newAttackCooldown = Math.max(0, soldier.attackCooldown - msPerFrame);
+        let newPatrolTarget = soldier.patrolTarget;
+        let newIdleTimer = Math.max(0, (soldier.idleTimer || 0) - msPerFrame);
         
         let targetEnemy = newTargetId ? currentEnemies.find(e => e.id === newTargetId) : undefined;
         
-        if (!targetEnemy || getDistance(soldier.position, targetEnemy.position) > SOLDIER_STATS.range) {
-             newTargetId = null;
-             let potentialTarget: Enemy | null = null;
-             let minDistance = SOLDIER_STATS.range;
-             for (const enemy of currentEnemies) {
-                 if (enemy.health > 0) {
-                     const distance = getDistance(soldier.position, enemy.position);
-                     if (distance < minDistance) {
-                         minDistance = distance;
-                         potentialTarget = enemy;
-                     }
-                 }
-             }
-             if (potentialTarget) {
-                 newTargetId = potentialTarget.id;
-                 targetEnemy = potentialTarget;
-             }
+        const needsNewTarget = !targetEnemy || getDistance(soldier.position, targetEnemy.position) > SOLDIER_STATS.range || targetEnemy.health <= 0;
+
+        if (needsNewTarget) {
+            newTargetId = null;
+            const potentialTargets = currentEnemies.filter(e => e.health > 0 && getDistance(soldier.position, e.position) <= SOLDIER_STATS.range);
+
+            if (potentialTargets.length > 0) {
+                const enemyTargetCounts = new Map<number, number>();
+                currentSoldiers.forEach(s => {
+                    if (s.targetId) {
+                        enemyTargetCounts.set(s.targetId, (enemyTargetCounts.get(s.targetId) || 0) + 1);
+                    }
+                });
+
+                potentialTargets.sort((a, b) => {
+                    const countA = enemyTargetCounts.get(a.id) || 0;
+                    const countB = enemyTargetCounts.get(b.id) || 0;
+                    if (countA !== countB) {
+                        return countA - countB;
+                    }
+                    return getDistance(soldier.position, a.position) - getDistance(soldier.position, b.position);
+                });
+                
+                newTargetId = potentialTargets[0].id;
+            }
+            targetEnemy = newTargetId ? currentEnemies.find(e => e.id === newTargetId) : undefined;
         }
         
         let newAnimationState = soldier.animationState;
         let newDirection = soldier.direction;
         
         if (targetEnemy) {
+            newPatrolTarget = undefined;
             const distanceToTarget = getDistance(soldier.position, targetEnemy.position);
              if (distanceToTarget <= SOLDIER_STATS.blockingRadius + 5) {
                 newAnimationState = 'idle';
@@ -819,53 +829,101 @@ const App: React.FC = () => {
                  soldier.position.y += normalizedDir.y * moveDistance;
              }
         } else {
-            const distanceToRally = getDistance(soldier.position, soldier.rallyPoint!);
-            if (distanceToRally > 5) {
-                newAnimationState = 'walk';
-                const moveDistance = SOLDIER_STATS.speed * timeDelta;
-                const directionVec = { x: soldier.rallyPoint!.x - soldier.position.x, y: soldier.rallyPoint!.y - soldier.position.y };
-                newDirection = directionVec.x >= 0 ? 'right' : 'left';
-                const normalizedDir = { x: directionVec.x / distanceToRally, y: directionVec.y / distanceToRally };
-                soldier.position.x += normalizedDir.x * moveDistance;
-                soldier.position.y += normalizedDir.y * moveDistance;
+             if (newPatrolTarget) {
+                const distanceToTarget = getDistance(soldier.position, newPatrolTarget);
+                if (distanceToTarget < 10) {
+                    newPatrolTarget = undefined;
+                    newIdleTimer = 1000 + Math.random() * 2000;
+                    newAnimationState = 'idle';
+                } else {
+                    newAnimationState = 'walk';
+                    const moveDistance = SOLDIER_STATS.speed * timeDelta;
+                    const directionVec = { x: newPatrolTarget.x - soldier.position.x, y: newPatrolTarget.y - soldier.position.y };
+                    newDirection = directionVec.x >= 0 ? 'right' : 'left';
+                    const normalizedDir = { x: directionVec.x / distanceToTarget, y: directionVec.y / distanceToTarget };
+                    soldier.position.x += normalizedDir.x * moveDistance;
+                    soldier.position.y += normalizedDir.y * moveDistance;
+                }
+            } else if (newIdleTimer <= 0) {
+              const angle = Math.random() * 2 * Math.PI;
+              const radius = Math.random() * SOLDIER_STATS.patrolRadius;
+              newPatrolTarget = {
+                x: soldier.rallyPoint!.x + Math.cos(angle) * radius,
+                y: soldier.rallyPoint!.y + Math.sin(angle) * radius,
+              };
             } else {
                 newAnimationState = 'idle';
             }
         }
-        return { ...soldier, attackCooldown: newAttackCooldown, targetId: newTargetId, animationState: newAnimationState, direction: newDirection };
+        return { ...soldier, attackCooldown: newAttackCooldown, targetId: newTargetId, animationState: newAnimationState, direction: newDirection, patrolTarget: newPatrolTarget, idleTimer: newIdleTimer };
     });
 
       currentReinforcements = currentReinforcements.map(r => {
-          let newTargetId = r.targetId;
-          const newAttackCooldown = Math.max(0, r.attackCooldown - msPerFrame);
-          const currentTarget = newTargetId ? currentEnemies.find(e => e.id === newTargetId) : undefined;
-          if (!currentTarget || getDistance(r.position, currentTarget.position) > REINFORCEMENTS_STATS.range) newTargetId = null;
-          if (!newTargetId) {
-              let potentialTarget: Enemy | null = null;
-              let minDistance = REINFORCEMENTS_STATS.range;
-              for (const enemy of currentEnemies) {
-                 if (enemy.health > 0) {
-                      const distance = getDistance(r.position, enemy.position);
-                      if (distance < minDistance) { minDistance = distance; potentialTarget = enemy; }
-                 }
-              }
-              if (potentialTarget) newTargetId = potentialTarget.id;
-          } else {
-               if (newAttackCooldown <= 0) {
-                  const targetIndex = currentEnemies.findIndex(e => e.id === newTargetId);
-                  if (targetIndex !== -1) {
-                      const enemy = currentEnemies[targetIndex];
-                      let damage = REINFORCEMENTS_STATS.damage;
-                      if(enemy.armorType === 'PHYSICAL') damage *= (1 - enemy.armorValue);
-                      currentEnemies[targetIndex] = {...enemy, health: enemy.health - damage };
-                  }
-                  setReinforcements(prev => prev.map(u => u.id === r.id ? { ...u, isAttacking: true } : u));
-                  setTimeout(() => setReinforcements(prev => prev.map(u => u.id === r.id ? { ...u, isAttacking: false } : u)), 300);
-                  return { ...r, attackCooldown: REINFORCEMENTS_STATS.attackRate, targetId: newTargetId, isAttacking: true };
-              }
-          }
-          return {...r, lifetime: r.lifetime - msPerFrame, attackCooldown: newAttackCooldown, targetId: newTargetId };
-      }).filter(r => r.lifetime > 0 && r.health > 0);
+        if (r.health <= 0) return { ...r, animationState: 'die' };
+        if (r.animationState === 'die') return r;
+
+        let newTargetId = r.targetId;
+        const newAttackCooldown = Math.max(0, r.attackCooldown - msPerFrame);
+        
+        let targetEnemy = newTargetId ? currentEnemies.find(e => e.id === newTargetId) : undefined;
+        if (!targetEnemy || targetEnemy.health <= 0) {
+            newTargetId = null;
+            let potentialTarget: Enemy | null = null;
+            let minDistance = r.range;
+            for (const enemy of currentEnemies) {
+               if (enemy.health > 0) {
+                    const distance = getDistance(r.position, enemy.position);
+                    if (distance < minDistance) { minDistance = distance; potentialTarget = enemy; }
+               }
+            }
+            if (potentialTarget) newTargetId = potentialTarget.id;
+            targetEnemy = newTargetId ? currentEnemies.find(e => e.id === newTargetId) : undefined;
+        }
+
+        let newAnimationState: GroundUnitAnimationState = r.animationState;
+        let newDirection = r.direction;
+
+        if (targetEnemy) {
+            const distanceToTarget = getDistance(r.position, targetEnemy.position);
+            if (distanceToTarget <= REINFORCEMENTS_STATS.blockingRadius + 5) {
+                newAnimationState = 'idle';
+                if (newAttackCooldown <= 0) {
+                    const targetIndex = currentEnemies.findIndex(e => e.id === newTargetId);
+                    if (targetIndex !== -1) {
+                        const enemy = currentEnemies[targetIndex];
+                        let damage = r.damage;
+                        if (enemy.armorType === 'PHYSICAL') damage *= (1 - enemy.armorValue);
+                        currentEnemies[targetIndex] = {...enemy, health: enemy.health - damage };
+                    }
+                    setAttackingState(r.id, 400);
+                    return { ...r, attackCooldown: REINFORCEMENTS_STATS.attackRate, targetId: newTargetId };
+                }
+            } else {
+                newAnimationState = 'walk';
+                const moveDistance = r.speed * timeDelta;
+                const directionVec = { x: targetEnemy.position.x - r.position.x, y: targetEnemy.position.y - r.position.y };
+                newDirection = directionVec.x >= 0 ? 'right' : 'left';
+                const normalizedDir = { x: directionVec.x / distanceToTarget, y: directionVec.y / distanceToTarget };
+                r.position.x += normalizedDir.x * moveDistance;
+                r.position.y += normalizedDir.y * moveDistance;
+            }
+        } else {
+            const distanceToDestination = getDistance(r.position, r.destination);
+            if (distanceToDestination > 10) {
+                newAnimationState = 'walk';
+                const moveDistance = r.speed * timeDelta;
+                const directionVec = { x: r.destination.x - r.position.x, y: r.destination.y - r.position.y };
+                newDirection = directionVec.x >= 0 ? 'right' : 'left';
+                const normalizedDir = { x: directionVec.x / distanceToDestination, y: directionVec.y / distanceToDestination };
+                r.position.x += normalizedDir.x * moveDistance;
+                r.position.y += normalizedDir.y * moveDistance;
+            } else {
+                newAnimationState = 'idle';
+            }
+        }
+        
+        return {...r, lifetime: r.lifetime - msPerFrame, attackCooldown: newAttackCooldown, targetId: newTargetId, animationState: newAnimationState, direction: newDirection };
+      }).filter(r => r.lifetime > 0 && r.animationState !== 'die');
       
       const updatedProjectiles = projectiles.filter(proj => {
           const targetPosition = proj.targetId ? currentEnemies.find(e => e.id === proj.targetId)?.position : proj.targetPosition;
@@ -917,6 +975,11 @@ const App: React.FC = () => {
             return null;
         }
 
+        let newAnimationState = enemy.animationState;
+        if (newAnimationState === 'attack') {
+            newAnimationState = 'idle'; // Reset after 1 frame, animation will play out
+        }
+
         let isBlocked = false;
         let blocker: Soldier | Hero | Reinforcement | null = null;
         let blockerType: 'soldier' | 'hero' | 'reinforcement' | null = null;
@@ -931,15 +994,13 @@ const App: React.FC = () => {
         }
         
         if (!isBlocked) {
-            const allMeleeUnits: (Soldier | Reinforcement)[] = [...currentSoldiers, ...currentReinforcements];
+            const allMeleeUnits: (Soldier | Reinforcement)[] = [...currentSoldiers.filter(s => s.health > 0 && s.animationState !== 'die' && s.respawnTimer <= 0), ...currentReinforcements.filter(r => r.health > 0)];
             allMeleeUnits.forEach(unit => {
-                if (unit.health > 0 && ('barracksId' in unit ? unit.animationState !== 'die' && unit.respawnTimer <= 0 : true)) {
-                    const dist = getDistance(enemy.position, unit.position);
-                    const blockingRadius = 'barracksId' in unit ? SOLDIER_STATS.blockingRadius : REINFORCEMENTS_STATS.blockingRadius;
-                    if (dist < blockingRadius && dist < closestDist) {
-                        closestDist = dist; isBlocked = true; blocker = unit;
-                        blockerType = 'barracksId' in unit ? 'soldier' : 'reinforcement';
-                    }
+                const dist = getDistance(enemy.position, unit.position);
+                const blockingRadius = 'barracksId' in unit ? SOLDIER_STATS.blockingRadius : REINFORCEMENTS_STATS.blockingRadius;
+                if (dist < blockingRadius && dist < closestDist) {
+                    closestDist = dist; isBlocked = true; blocker = unit;
+                    blockerType = 'barracksId' in unit ? 'soldier' : 'reinforcement';
                 }
             });
             if (currentHero.health > 0 && currentHero.respawnTimer <= 0) {
@@ -952,10 +1013,13 @@ const App: React.FC = () => {
 
         const enemyStats = ENEMY_STATS[enemy.type];
         const newAttackCooldown = Math.max(0, (enemy.attackCooldown || 0) - msPerFrame);
+        let updatedEnemy = { ...enemy, attackCooldown: newAttackCooldown };
 
         if (isBlocked && blocker) {
+            newAnimationState = 'idle';
             if (newAttackCooldown <= 0) {
                 audioManager.playSound('enemyAttack');
+                newAnimationState = 'attack';
                 let damageDealt = enemyStats.damage;
                 if (blockerType === 'hero') {
                      const heroBlocker = blocker as Hero;
@@ -976,20 +1040,19 @@ const App: React.FC = () => {
                      const reinforcementIndex = currentReinforcements.findIndex(s => s.id === blocker!.id);
                     if (reinforcementIndex !== -1) currentReinforcements[reinforcementIndex].health = Math.max(0, currentReinforcements[reinforcementIndex].health - damageDealt);
                 }
-                setEnemies(prev => prev.map(e => e.id === enemy.id ? {...e, isAttacking: true} : e));
-                setTimeout(() => setEnemies(prev => prev.map(e => e.id === enemy.id ? {...e, isAttacking: false} : e)), 300);
-                return { ...enemy, attackCooldown: enemyStats.attackRate, isAttacking: true };
+                updatedEnemy = { ...updatedEnemy, attackCooldown: enemyStats.attackRate, animationState: 'attack' };
             }
-            return { ...enemy, attackCooldown: newAttackCooldown };
+            return { ...updatedEnemy, animationState: newAnimationState };
         }
         
+        newAnimationState = 'walk';
         if (enemy.tauntedBy === currentHero.id && currentHero.health > 0) {
             const distToTaunter = getDistance(enemy.position, currentHero.position);
             const moveDistance = enemy.speed * timeDelta;
             const direction = { x: currentHero.position.x - enemy.position.x, y: currentHero.position.y - enemy.position.y };
             const normalizedDir = { x: direction.x / distToTaunter, y: direction.y / distToTaunter };
             const newPos = {x: enemy.position.x + normalizedDir.x * moveDistance, y: enemy.position.y + normalizedDir.y * moveDistance};
-            return { ...enemy, position: newPos };
+            return { ...enemy, position: newPos, animationState: newAnimationState };
         }
 
         const newSlowTimer = Math.max(0, enemy.slowTimer - msPerFrame);
@@ -998,7 +1061,10 @@ const App: React.FC = () => {
         let currentPathIndex = enemy.pathIndex;
         let newPosition = { ...enemy.position };
         if (currentPathIndex < MAP_PATH.length - 1) {
-          const nextPathNodeScreen = gameToScreen(MAP_PATH[currentPathIndex + 1]);
+          const nextPathNodeGrid = MAP_PATH[currentPathIndex + 1];
+          const nextPathNodeScreen = gameToScreen(nextPathNodeGrid);
+          nextPathNodeScreen.y += enemy.pathOffset;
+
           const distanceToNextNode = getDistance(newPosition, nextPathNodeScreen);
           if (distanceToNextNode < distanceToTravel) {
               const remainingDistance = distanceToTravel - distanceToNextNode;
@@ -1007,7 +1073,10 @@ const App: React.FC = () => {
                    enemiesWhoReachedEnd.push(enemy.id.toString());
                    return null;
                } else {
-                    const nextNextNode = gameToScreen(MAP_PATH[currentPathIndex + 1]);
+                    const nextNextNodeGrid = MAP_PATH[currentPathIndex + 1];
+                    const nextNextNode = gameToScreen(nextNextNodeGrid);
+                    nextNextNode.y += enemy.pathOffset;
+
                     const directionToNext = {x: nextNextNode.x - nextPathNodeScreen.x, y: nextNextNode.y - nextPathNodeScreen.y};
                     const distToNext = getDistance(nextPathNodeScreen, nextNextNode) || 1;
                     const normalizedDir = {x: directionToNext.x / distToNext, y: directionToNext.y / distToNext};
@@ -1023,7 +1092,7 @@ const App: React.FC = () => {
            enemiesWhoReachedEnd.push(enemy.id.toString());
            return null;
         }
-        return { ...enemy, position: newPosition, pathIndex: currentPathIndex, attackCooldown: 0, slowTimer: newSlowTimer };
+        return { ...enemy, position: newPosition, pathIndex: currentPathIndex, attackCooldown: 0, slowTimer: newSlowTimer, animationState: newAnimationState };
         
       }).filter((e): e is Enemy => e !== null);
       
@@ -1069,7 +1138,7 @@ const App: React.FC = () => {
         return;
       }
       
-      if (waveDefinition && waveSpawnData.current.spawnIndex >= waveDefinition.enemies.length && currentEnemies.length === 0) {
+      if (gameStatus === 'WAVE_IN_PROGRESS' && waveDefinition && waveSpawnData.current.spawnIndex >= waveDefinition.enemies.length && currentEnemies.length === 0) {
          if (currentWave === WAVES.length) {
               setGameStatus('VICTORY');
               audioManager.playSound('victory');

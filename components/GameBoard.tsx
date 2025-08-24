@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { TOWER_SPOTS, GAME_CONFIG, MAP_PATH, HERO_STATS, TOWER_STATS, REINFORCEMENTS_STATS, HERO_START_GRID_POS, ENVIRONMENT_DECORATIONS } from '../constants';
+import { TOWER_SPOTS, GAME_CONFIG, MAP_PATH, HERO_STATS, REINFORCEMENTS_STATS, HERO_START_GRID_POS, ENVIRONMENT_DECORATIONS } from '../constants';
 import type { Tower, Enemy, Vector2D, Projectile, Soldier, Hero, SelectableUnit, Reinforcement, Explosion, PlayerSpell, GoldParticle, RallyPointDragState, EnvironmentDecoration } from '../types';
 import { gameToScreen } from '../utils';
 import { 
@@ -17,7 +17,6 @@ import {
     TowerSpotIcon,
     GameBackground,
     SelectionCircle,
-    RallyPointRangeCircle,
     RallyPointFlag,
     BannermanIcon,
     Explosion as ExplosionIcon,
@@ -89,7 +88,7 @@ const EnemyComponent: React.FC<{ enemy: Enemy; onSelect: (e: Enemy) => void }> =
       onMouseDown={(e) => { e.stopPropagation(); onSelect(enemy); }}
     >
       {enemy.slowTimer > 0 && <SlowEffect />}
-      <EnemyIcon type={enemy.type} isAttacking={enemy.isAttacking}/>
+      <EnemyIcon type={enemy.type} animationState={enemy.animationState}/>
       <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-black rounded-full overflow-hidden border border-gray-600">
         <div className="h-full bg-red-500 rounded-full" style={{ width: `${healthPercentage}%` }} />
       </div>
@@ -175,8 +174,7 @@ const ReinforcementComponent: React.FC<{ reinforcement: Reinforcement }> = React
             opacity: reinforcement.lifetime < 2000 ? lifetimePercentage / 100 : 1,
           }}
         >
-            {reinforcement.isBuffed && <BuffEffect />}
-            <BannermanIcon isAttacking={reinforcement.isAttacking} />
+            <BannermanIcon animationState={reinforcement.animationState} direction={reinforcement.direction} />
             <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-6 h-1 bg-black rounded-full overflow-hidden border border-gray-500">
                 <div className="h-full bg-green-400 rounded-full" style={{ width: `${healthPercentage}%` }} />
             </div>
@@ -313,7 +311,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   };
 
   const selectionPosition = selectedUnit ? ('level' in selectedUnit ? gameToScreen(selectedUnit.position) : selectedUnit.position) : null;
-  const isBarracksSelected = selectedUnit && 'type' in selectedUnit && selectedUnit.type === 'NORTHERN_BARRACKS';
   const showExitWarning = enemies.some(e => e.pathIndex >= MAP_PATH.length - 4);
 
   return (
@@ -346,17 +343,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         })}
       
       {selectionPosition && <SelectionCircle position={selectionPosition} />}
-      {isBarracksSelected && (
-        <>
-            <RallyPointRangeCircle 
-                position={gameToScreen((selectedUnit as Tower).position)} 
-                range={TOWER_STATS.NORTHERN_BARRACKS[(selectedUnit as Tower).level -1].range} 
-            />
-            {(selectedUnit as Tower).rallyPoint && (
-                <RallyPointFlag position={gameToScreen((selectedUnit as Tower).rallyPoint!)} />
-            )}
-        </>
-      )}
       {rallyPointDrag && <PathPreviewLine start={rallyPointDrag.startPosition} end={rallyPointDrag.currentPosition} />}
       {showExitWarning && <ExitWarning />}
 

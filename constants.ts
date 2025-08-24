@@ -1,3 +1,4 @@
+
 import { Vector2D, TowerType, EnemyType, Wave, ProjectileType, DamageType, ArmorType, EnvironmentDecoration } from './types';
 
 export const GAME_CONFIG = {
@@ -11,6 +12,7 @@ export const GAME_CONFIG = {
   timeBetweenWaves: 15000, // ms
   width: 1920,
   height: 880,
+  pathWidth: 60, // The width in pixels for enemies to spread out on the path
 };
 
 export const EARLY_WAVE_BONUS = {
@@ -83,9 +85,9 @@ export const TOWER_STATS: Record<TowerType, TowerLevelStats[]> = {
     { name: 'Ancient Weirwood', cost: 0, upgradeCost: 0, sellValue: 155, damage: 70, range: 160, fireRate: 1300, damageType: DamageType.MAGIC, projectileType: 'NATURE_BOLT', projectileSpeed: 320 },
   ],
   NORTHERN_BARRACKS: [
-    { name: 'Encampment', cost: 80, upgradeCost: 70, sellValue: 40, damage: 0, range: 120, fireRate: 0, damageType: DamageType.PHYSICAL },
-    { name: 'Barracks', cost: 0, upgradeCost: 90, sellValue: 75, damage: 0, range: 140, fireRate: 0, damageType: DamageType.PHYSICAL },
-    { name: 'Fortress', cost: 0, upgradeCost: 0, sellValue: 120, damage: 0, range: 160, fireRate: 0, damageType: DamageType.PHYSICAL },
+    { name: 'Encampment', cost: 80, upgradeCost: 70, sellValue: 40, damage: 0, range: 0, fireRate: 0, damageType: DamageType.PHYSICAL },
+    { name: 'Barracks', cost: 0, upgradeCost: 90, sellValue: 75, damage: 0, range: 0, fireRate: 0, damageType: DamageType.PHYSICAL },
+    { name: 'Fortress', cost: 0, upgradeCost: 0, sellValue: 120, damage: 0, range: 0, fireRate: 0, damageType: DamageType.PHYSICAL },
   ],
   SIEGE_WORKSHOP: [
     { name: 'Catapult', cost: 120, upgradeCost: 100, sellValue: 60, damage: 30, range: 220, fireRate: 3000, damageType: DamageType.PHYSICAL, projectileType: 'CATAPULT_ROCK', projectileSpeed: 150, splashRadius: 60 },
@@ -104,6 +106,7 @@ export const SOLDIER_STATS = {
     respawnTime: 10000,
     count: 3,
     blockingRadius: 30,
+    patrolRadius: 30,
 };
 
 export const REINFORCEMENTS_STATS = {
@@ -112,6 +115,7 @@ export const REINFORCEMENTS_STATS = {
     damage: 12,
     attackRate: 1200,
     range: 50,
+    speed: 110,
     duration: 15000, // ms
     cooldown: 20000, // ms
     count: 2,
@@ -126,14 +130,15 @@ export const RAIN_OF_FIRE_STATS = {
 
 export const HERO_STATS = {
     name: 'Brienne of Tarth',
-    health: 250,
-    damage: 14,
-    attackRate: 1500,
+    health: 200,
+    damage: 10,
+    attackRate: 1600,
     range: 50, // Melee range
     speed: 120,
     respawnTime: 20000,
     blockingRadius: 30,
-    patrolRange: 150, // pixels from rally point
+    patrolRange: 150, // pixels from rally point to find enemies
+    patrolRadius: 40, // pixels from rally point to wander
     armorType: ArmorType.PHYSICAL,
     armorValue: 0.1,
     abilityName: 'Oathkeeper\'s Stand',
@@ -161,10 +166,10 @@ export const ENEMY_STATS: Record<EnemyType, EnemyStat> = {
 };
 
 export const WAVES: Wave[] = [
-  { enemies: Array(8).fill('ORC_GRUNT'), spawnRate: 1200 },
-  { enemies: [...Array(12).fill('ORC_GRUNT'), ...Array(5).fill('ORC_BERSERKER')], spawnRate: 800 },
-  { enemies: [...Array(6).fill('ORC_GRUNT'), ...Array(10).fill('ORC_BERSERKER')], spawnRate: 700 },
-  { enemies: [...Array(15).fill('ORC_BERSERKER'), ...Array(3).fill('OGRE_BRUTE')], spawnRate: 600 },
-  { enemies: [...Array(10).fill('ORC_GRUNT'), ...Array(10).fill('ORC_BERSERKER'), ...Array(6).fill('OGRE_BRUTE')], spawnRate: 500 },
-  { enemies: [...Array(12).fill('ORC_BERSERKER'), ...Array(10).fill('OGRE_BRUTE')], spawnRate: 800 },
+  { enemies: Array(8).fill('ORC_GRUNT'), spawnRate: 1800 },
+  { enemies: [...Array(12).fill('ORC_GRUNT'), ...Array(5).fill('ORC_BERSERKER')], spawnRate: 1400 },
+  { enemies: [...Array(6).fill('ORC_GRUNT'), ...Array(10).fill('ORC_BERSERKER')], spawnRate: 1200 },
+  { enemies: [...Array(15).fill('ORC_BERSERKER'), ...Array(3).fill('OGRE_BRUTE')], spawnRate: 1000 },
+  { enemies: [...Array(10).fill('ORC_GRUNT'), ...Array(10).fill('ORC_BERSERKER'), ...Array(6).fill('OGRE_BRUTE')], spawnRate: 900 },
+  { enemies: [...Array(12).fill('ORC_BERSERKER'), ...Array(10).fill('OGRE_BRUTE')], spawnRate: 1300 },
 ];

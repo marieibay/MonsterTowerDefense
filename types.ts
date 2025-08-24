@@ -26,11 +26,12 @@ export interface Tower {
   level: number;
   cooldown: number;
   targetId: number | null;
-  rallyPoint?: Vector2D; // Grid Position
   isAttacking?: boolean;
   damageType: DamageType;
   spawnCounter?: number;
 }
+
+export type EnemyAnimationState = 'walk' | 'idle' | 'attack';
 
 export interface Enemy {
   id: number;
@@ -41,12 +42,13 @@ export interface Enemy {
   maxHealth: number;
   pathIndex: number;
   attackCooldown?: number;
-  isAttacking?: boolean;
+  animationState: EnemyAnimationState;
   armorType: ArmorType;
   armorValue: number; // e.g., 0.3 for 30% reduction
   speed: number;
   slowTimer: number; // in ms
   tauntedBy?: number | null;
+  pathOffset: number;
 }
 
 export interface Projectile {
@@ -62,7 +64,7 @@ export interface Projectile {
     slows?: { factor: number; duration: number };
 }
 
-export type SoldierAnimationState = 'idle' | 'walk' | 'attack' | 'die';
+export type GroundUnitAnimationState = 'idle' | 'walk' | 'attack' | 'die';
 
 export interface Soldier {
     id: number;
@@ -78,12 +80,12 @@ export interface Soldier {
     targetId: number | null;
     respawnTimer: number; // in ms
     isBuffed?: boolean;
-    animationState: SoldierAnimationState;
+    animationState: GroundUnitAnimationState;
     direction: 'left' | 'right';
     deathAnimTimer?: number;
+    patrolTarget?: Vector2D;
+    idleTimer?: number;
 }
-
-export type HeroAnimationState = 'idle' | 'walk' | 'attack' | 'die';
 
 export interface Hero {
     id: number;
@@ -101,20 +103,26 @@ export interface Hero {
     abilityActiveTimer: number;
     armorType: ArmorType;
     armorValue: number;
-    animationState: HeroAnimationState;
+    animationState: GroundUnitAnimationState;
     direction: 'left' | 'right';
+    patrolTarget?: Vector2D;
+    idleTimer?: number;
 }
 
 export interface Reinforcement {
     id: number;
     position: Vector2D;
+    destination: Vector2D;
     health: number;
     maxHealth: number;
     targetId: number | null;
     attackCooldown: number;
     lifetime: number; // in ms
-    isBuffed?: boolean;
-    isAttacking?: boolean;
+    damage: number;
+    range: number;
+    speed: number;
+    animationState: GroundUnitAnimationState;
+    direction: 'left' | 'right';
 }
 
 export interface Explosion {

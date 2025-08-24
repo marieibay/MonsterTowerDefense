@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import type { Vector2D, PlayerSpell, EnemyType, HeroAnimationState, SoldierAnimationState } from '../types';
+import type { Vector2D, PlayerSpell, EnemyType, EnemyAnimationState, GroundUnitAnimationState } from '../types';
 import { RAIN_OF_FIRE_STATS, MAP_PATH, GAME_CONFIG } from '../constants';
 import { gameToScreen } from '../utils';
 
@@ -244,8 +244,8 @@ export const WeirwoodGroveIcon: React.FC<TowerProps> = ({level, isAttacking, ...
              <radialGradient id="weir-leaves" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#ff8a65"/><stop offset="100%" stopColor="#d84315"/></radialGradient>
         </defs>
         <style>{`
-            @keyframes pulse-glow { 0%, 100% { opacity: 0.6; transform: scale(1.0); } 50% { opacity: 1; transform: scale(1.1); } }
-            @keyframes leaves-rustle { 0%, 100% { transform: skewX(0) rotate(0deg); } 25% { transform: skewX(1deg) rotate(-1deg); } 75% { transform: skewX(-1deg) rotate(1deg); } }
+            @keyframes pulse-glow { 0%, 100% { opacity: 0.7; transform: scale(1.0); } 50% { opacity: 1; transform: scale(1.15); } }
+            @keyframes leaves-rustle { 0%, 100% { transform: skewX(0) rotate(0); } 25% { transform: skewX(2deg) rotate(-1.5deg); } 75% { transform: skewX(-2deg) rotate(1.5deg); } }
             .leaves { animation: leaves-rustle 7s infinite ease-in-out; transform-origin: center bottom; }
         `}</style>
         <g className="leaves">
@@ -327,8 +327,10 @@ export const SiegeWorkshopIcon: React.FC<TowerProps> = ({level, isAttacking, ...
                 70% { transform: rotate(-60deg); }
                 100% { transform: rotate(10deg); }
             }
+            @keyframes siege-idle-rock { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(0.5deg); } }
+            .idle-rock { animation: siege-idle-rock 6s infinite ease-in-out; transform-origin: bottom center; }
         `}</style>
-        <g className={isAttacking ? 'attacking' : ''}>
+        <g className={isAttacking ? 'attacking' : 'idle-rock'}>
             <rect x="0" y="26" width="40" height="6" fill="url(#wood-grad-dark)" />
             <circle cx="8" cy="24" r="6" fill="url(#wheel-grad)" stroke="#3e2723" strokeWidth="1"/><circle cx="32" cy="24" r="6" fill="url(#wheel-grad)" stroke="#3e2723" strokeWidth="1"/>
             <path d="M6 22 L16 4 H24 L34 22" stroke="url(#wood-grad-dark)" strokeWidth="4" fill="none" strokeLinecap="round" />
@@ -358,13 +360,13 @@ interface UnitProps extends React.SVGProps<SVGSVGElement> {
     isAttacking?: boolean; 
 }
 
-export const NorthernSoldierIcon: React.FC<{ animationState: SoldierAnimationState, direction: 'left' | 'right' }> = ({ animationState, direction }) => {
+export const NorthernSoldierIcon: React.FC<{ animationState: GroundUnitAnimationState, direction: 'left' | 'right' }> = ({ animationState, direction }) => {
     const css = `
         .body, .arm, .leg { transition: transform 0.1s ease-in-out; }
         .idle .body { animation: unit-idle 3s infinite ease-in-out; }
         @keyframes unit-idle { 
-            0%, 100% { transform: translateY(0) rotate(0); } 
-            50% { transform: translateY(-1px) rotate(-1deg); } 
+            0%, 100% { transform: translateY(0) scale(1, 1); } 
+            50% { transform: translateY(-1px) scale(1.02, 0.98); } 
         }
 
         .walk .body { animation: walk-bob 0.8s infinite ease-in-out; }
@@ -400,7 +402,7 @@ export const NorthernSoldierIcon: React.FC<{ animationState: SoldierAnimationSta
                 <g className="soldier-group">
                     <g className="leg left-leg" style={{ transformOrigin: '8px 15px' }}><path d="M7 23 L9 23 L9 18 L7 17 Z" fill="url(#cloth-dark-grad)" /><rect x="7" y="22" width="2" height="2" fill="#263238" /></g>
                     <g className="leg right-leg" style={{ transformOrigin: '12px 15px' }}><path d="M11 23 L13 23 L13 17 L11 18 Z" fill="url(#cloth-light-grad)" /><rect x="11" y="22" width="2" height="2" fill="#455a64" /></g>
-                    <g className="body" style={{ transformOrigin: '10px 18px' }}>
+                    <g className="body" style={{ transformOrigin: '10px 22px' }}>
                         <path d="M6 18 L14 18 L15 9 L5 9 Z" fill="url(#armor-dark-grad)" />
                         <path d="M7 9 L13 9 L12 3 L8 3 Z" fill="url(#armor-grad)" />
                         <path d="M7 6 L13 6 L13 7 L7 7 Z" fill="#37474f" /><path d="M8 5 L12 5 L12 6 L8 6 Z" fill="#ffe0b2" />
@@ -417,13 +419,13 @@ export const NorthernSoldierIcon: React.FC<{ animationState: SoldierAnimationSta
     );
 };
 
-export const BrienneIcon: React.FC<{ animationState: HeroAnimationState, direction: 'left' | 'right' }> = ({ animationState, direction }) => {
+export const BrienneIcon: React.FC<{ animationState: GroundUnitAnimationState, direction: 'left' | 'right' }> = ({ animationState, direction }) => {
     const css = `
         .body { transition: transform 0.1s ease-in-out; }
         .idle .body { animation: hero-idle 3.5s infinite ease-in-out; }
         @keyframes hero-idle { 
-            0%, 100% { transform: translateY(0) rotate(0deg); } 
-            50% { transform: translateY(-2px) rotate(1deg); } 
+            0%, 100% { transform: translateY(0) scale(1, 1); } 
+            50% { transform: translateY(-1px) scale(1.02, 0.98); } 
         }
 
         .arm, .leg { transition: transform 0.1s ease-in-out; }
@@ -443,33 +445,94 @@ export const BrienneIcon: React.FC<{ animationState: HeroAnimationState, directi
             70% { transform: rotate(80deg); } /* swing */
             100% { transform: rotate(10deg); } /* follow-through */
         }
+        
+        /* Mirror attack animation for left direction */
+        .attack .left-arm { animation: sword-swing-left 0.4s ease-in-out; }
+        @keyframes sword-swing-left { 
+            0% { transform: rotate(-10deg); }
+            30% { transform: rotate(20deg); } /* anticipation */
+            70% { transform: rotate(-80deg); } /* swing */
+            100% { transform: rotate(-10deg); } /* follow-through */
+        }
 
         .hero-group { transition: transform 0.6s, opacity 0.6s; transform-origin: bottom center; }
         .die .hero-group { transform: rotate(80deg) translateY(20px); opacity: 0; }
+        .die.left .hero-group { transform: rotate(-80deg) translateY(20px); opacity: 0; }
     `;
+
+    const defs = (
+        <defs>
+            <linearGradient id="hero-armor-light" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#e0e0e0"/><stop offset="50%" stopColor="#ffffff"/><stop offset="100%" stopColor="#e0e0e0"/></linearGradient>
+            <linearGradient id="hero-armor-dark" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#bdbdbd"/><stop offset="50%" stopColor="#f5f5f5"/><stop offset="100%" stopColor="#bdbdbd"/></linearGradient>
+            <linearGradient id="hero-leg-dark" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#9e9e9e"/><stop offset="100%" stopColor="#546e7a"/></linearGradient>
+            <linearGradient id="hero-leg-light" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#bdbdbd"/><stop offset="100%" stopColor="#78909c"/></linearGradient>
+            <linearGradient id="hero-skin" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#f5c29c"/><stop offset="50%" stopColor="#fcd3b2"/><stop offset="100%" stopColor="#f5c29c"/></linearGradient>
+            <linearGradient id="hero-hair" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#fff59d"/><stop offset="100%" stopColor="#fbc02d"/></linearGradient>
+            <linearGradient id="hero-tunic" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#546e7a"/><stop offset="100%" stopColor="#263238"/></linearGradient>
+            <linearGradient id="sword-blade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f5f5f5"/><stop offset="100%" stopColor="#bdbdbd"/></linearGradient>
+        </defs>
+    );
+
+    if (direction === 'left') {
+        return (
+            <svg width="60" height="72" viewBox="0 0 30 36">
+                {defs}<style>{css}</style>
+                <g className={`${animationState} left`}>
+                    <g className="hero-group">
+                        {/* Legs Mirrored */}
+                        <g className="leg right-leg" style={{transformOrigin: '18px 23px'}}><path d="M19 35 L 16 35 L 16 27 L 19 25 Z" fill="url(#hero-leg-dark)" /><rect x="16" y="34" width="3" height="2" fill="#424242" /></g>
+                        <g className="leg left-leg" style={{transformOrigin: '13px 23px'}}><path d="M14 35 L 11 35 L 11 25 L 14 27 Z" fill="url(#hero-leg-light)" /><rect x="11" y="34" width="3" height="2" fill="#616161" /></g>
+                        
+                        <g className="body" style={{transformOrigin: '15px 34px'}}>
+                            {/* Sword Arm Mirrored (now right-arm visually) */}
+                            <g className="arm right-arm" style={{transformOrigin: '22px 17px'}}>
+                               <path d="M22 16 L 27 18 L 28 24 L 23 25 Z" fill="url(#hero-armor-dark)"/>
+                               {/* Shield */}
+                               <path d="M28 18 C 32 20, 32 30, 28 32 L 22 32 C 18 30, 18 20, 22 18 Z" fill="url(#hero-armor-dark)" stroke="#424242" strokeWidth="1"/>
+                               {/* Direwolf sigil */}
+                               <path d="M25 22 L 25 25 L 26 26 L 24 26 L 25 25 L 24 25 L 25 28 L 23 28 L 24 25 M23 23 L 24 22" stroke="#fafafa" strokeWidth="0.5" fill="none" />
+                            </g>
+
+                            {/* Tunic & Torso Mirrored */}
+                            <path d="M20 26 L 10 26 L 8 15 L 22 15 Z" fill="url(#hero-tunic)" />
+                            <path d="M20 24 L 10 24 L 9 16 L 21 16 Z" fill="url(#hero-armor-dark)" />
+                            <path d="M18 18 L 12 18 L 11 16 L 19 16 Z" fill="url(#hero-armor-light)" />
+
+                            {/* Head and Hair Mirrored */}
+                            <path d="M18 15 L 12 15 L 13 9 L 17 9 Z" fill="url(#hero-skin)"/>
+                            <path d="M18 9 L 12 9 Q 12 4, 15 4 Q 18 4, 18 9 Z" fill="url(#hero-hair)" />
+                            <path d="M20 8 L 10 8 L 12 6 L 18 6 Z" fill="url(#hero-armor-light)" />
+                            
+                            {/* Shield Arm Mirrored (now left-arm visually) */}
+                            <g className="arm left-arm" style={{transformOrigin: '12px 17px'}}>
+                                <path d="M12 16 L 7 18 L 6 24 L 11 24 Z" fill="url(#hero-armor-dark)" />
+                                {/* Sword */}
+                                <g transform="rotate(-15 5 19)">
+                                    <rect x="7" y="0" width="2" height="22" fill="url(#sword-blade)"/>
+                                    <rect x="5" y="20" width="6" height="2" fill="#795548"/>
+                                    <rect x="7" y="22" width="2" height="2" fill="#a1887f"/>
+                                </g>
+                            </g>
+                            {/* Pauldrons Mirrored */}
+                            <ellipse cx="21" cy="16" rx="4" ry="3" fill="url(#hero-armor-light)"/>
+                            <ellipse cx="9" cy="16" rx="4" ry="3" fill="url(#hero-armor-light)"/>
+                        </g>
+                    </g>
+                </g>
+            </svg>
+        );
+    }
 
     return (
         <svg width="60" height="72" viewBox="0 0 30 36">
-            <defs>
-                <linearGradient id="hero-armor-light" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#e0e0e0"/><stop offset="50%" stopColor="#ffffff"/><stop offset="100%" stopColor="#e0e0e0"/></linearGradient>
-                <linearGradient id="hero-armor-dark" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#bdbdbd"/><stop offset="50%" stopColor="#f5f5f5"/><stop offset="100%" stopColor="#bdbdbd"/></linearGradient>
-                <linearGradient id="hero-leg-dark" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#9e9e9e"/><stop offset="100%" stopColor="#546e7a"/></linearGradient>
-                <linearGradient id="hero-leg-light" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#bdbdbd"/><stop offset="100%" stopColor="#78909c"/></linearGradient>
-                
-                {/* New Gradients */}
-                <linearGradient id="hero-skin" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#f5c29c"/><stop offset="50%" stopColor="#fcd3b2"/><stop offset="100%" stopColor="#f5c29c"/></linearGradient>
-                <linearGradient id="hero-hair" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#fff59d"/><stop offset="100%" stopColor="#fbc02d"/></linearGradient>
-                <linearGradient id="hero-tunic" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#546e7a"/><stop offset="100%" stopColor="#263238"/></linearGradient>
-                <linearGradient id="sword-blade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f5f5f5"/><stop offset="100%" stopColor="#bdbdbd"/></linearGradient>
-            </defs>
-            <style>{css}</style>
-            <g className={animationState} transform={direction === 'left' ? 'scale(-1, 1) translate(-30, 0)' : ''}>
+            {defs}<style>{css}</style>
+            <g className={animationState}>
                 <g className="hero-group">
                     {/* Legs */}
                     <g className="leg left-leg" style={{transformOrigin: '12px 23px'}}><path d="M11 35 L 14 35 L 14 27 L 11 25 Z" fill="url(#hero-leg-dark)" /><rect x="11" y="34" width="3" height="2" fill="#424242" /></g>
                     <g className="leg right-leg" style={{transformOrigin: '17px 23px'}}><path d="M16 35 L 19 35 L 19 25 L 16 27 Z" fill="url(#hero-leg-light)" /><rect x="16" y="34" width="3" height="2" fill="#616161" /></g>
                     
-                    <g className="body" style={{transformOrigin: '15px 25px'}}>
+                    <g className="body" style={{transformOrigin: '15px 34px'}}>
                         {/* Shield Arm */}
                         <g className="arm left-arm" style={{transformOrigin: '12px 17px'}}>
                            <path d="M8 16 L 3 18 L 2 24 L 7 25 Z" fill="url(#hero-armor-dark)"/>
@@ -511,15 +574,23 @@ export const BrienneIcon: React.FC<{ animationState: HeroAnimationState, directi
 };
 
 
-export const BannermanIcon: React.FC<UnitProps> = ({ isAttacking, ...props }) => (
+export const BannermanIcon: React.FC<{ animationState: GroundUnitAnimationState, direction: 'left' | 'right' }> = ({ animationState, direction, ...props }) => (
      <svg width="32" height="40" viewBox="0 0 16 20" {...props}>
         <style>{`
+            .body { transition: transform 0.1s; }
+            .idle .body { animation: unit-idle-banner 2.5s infinite ease-in-out; }
             @keyframes unit-idle-banner { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1px); } }
-            .idle { animation: unit-idle-banner 2.5s infinite ease-in-out; }
+            
+            .walk .body { animation: walk-bob-banner 0.8s infinite ease-in-out; }
+            @keyframes walk-bob-banner { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1px); } }
+            
+            .attack .body { animation: attack-thrust-banner 0.4s ease-in-out; }
+            @keyframes attack-thrust-banner { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(2px); } }
+
             @keyframes banner-wave { 0% { d: "M-2 1 C 0 0, 4 0, 6 1 L 6 7 C 4 8, 0 8, -2 7 Z"; } 50% { d: "M-2 1 C 0 2, 4 2, 6 1 L 6 7 C 4 6, 0 6, -2 7 Z"; } 100% { d: "M-2 1 C 0 0, 4 0, 6 1 L 6 7 C 4 8, 0 8, -2 7 Z"; } }
         `}</style>
-        <g className="idle">
-            <g transform={isAttacking ? 'translateX(1px)' : ''} style={{transition: 'transform 0.1s'}}>
+        <g className={animationState} transform={direction === 'left' ? 'scale(-1, 1) translate(-16, 0)' : ''}>
+            <g className="body">
                 <path d="M4 19 L 7 19 L 7 14 L 4 14 Z" fill="#546e7a" />
                 <path d="M9 19 L 12 19 L 12 14 L 9 14 Z" fill="#546e7a" />
                 <path d="M3 14 L 13 14 L 14 7 L 2 7 Z" fill="#2e7d32"/>
@@ -532,26 +603,128 @@ export const BannermanIcon: React.FC<UnitProps> = ({ isAttacking, ...props }) =>
     </svg>
 );
 
-export const EnemyIcon: React.FC<{type: EnemyType} & UnitProps> = ({ type, isAttacking, ...props }) => {
-    const attackStyle = { transition: 'transform 0.1s ease-in-out' };
-    const idleAnim = `@keyframes enemy-idle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } } .idle { animation: enemy-idle 2.5s infinite ease-in-out; }`;
-    const attackAnim = (x: number) => `@keyframes enemy-attack { 0%,100% { transform: translateX(0); } 50% { transform: translateX(${x}px); } } .attacking { animation: enemy-attack 0.2s; }`;
-
+export const EnemyIcon: React.FC<{type: EnemyType, animationState: EnemyAnimationState}> = ({ type, animationState, ...props }) => {
     const defs = (
         <defs>
-            <linearGradient id="orc-skin-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#a5d6a7"/><stop offset="100%" stopColor="#388e3c"/></linearGradient>
-            <linearGradient id="orc-berserk-skin-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#81c784"/><stop offset="100%" stopColor="#2e7d32"/></linearGradient>
-            <linearGradient id="ogre-skin-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#bdbdbd"/><stop offset="100%" stopColor="#616161"/></linearGradient>
-            <linearGradient id="leather-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#a1887f"/><stop offset="100%" stopColor="#5d4037"/></linearGradient>
-            <linearGradient id="metal-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#9e9e9e"/><stop offset="100%" stopColor="#424242"/></linearGradient>
-            <linearGradient id="wood-grad-dark" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#6d4c41"/><stop offset="100%" stopColor="#4e342e"/></linearGradient>
+            <filter id="felt-texture">
+                <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="turbulence"/>
+                <feDisplacementMap in2="turbulence" in="SourceGraphic" scale="0.5" />
+            </filter>
+            <filter id="fur-texture">
+                <feTurbulence type="fractalNoise" baseFrequency="0.2 0.5" numOctaves="3" seed="10" result="turbulence"/>
+                <feDisplacementMap in2="turbulence" in="SourceGraphic" scale="1.5" />
+            </filter>
+            <linearGradient id="wood-club-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#8d6e63"/><stop offset="100%" stopColor="#5d4037"/></linearGradient>
+            <linearGradient id="metal-axe-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#e0e0e0"/><stop offset="100%" stopColor="#757575"/></linearGradient>
         </defs>
     );
 
     switch (type) {
-        case 'ORC_GRUNT': return <svg width="28" height="36" viewBox="0 0 14 18" {...props}>{defs}<style>{idleAnim}{attackAnim(2)}</style><g className={isAttacking ? 'attacking' : 'idle'} style={attackStyle}><path d="M2 17 L 5 17 L 5 12 L 2 12 Z" fill="#5d4037" /><path d="M9 17 L 12 17 L 12 12 L 9 12 Z" fill="#5d4037" /><path d="M1 12 L 13 12 L 12 6 L 2 6 Z" fill="url(#leather-grad)" /><path d="M3 6 L 11 6 C 12 3, 9 0, 7 0 C 5 0, 2 3, 3 6 Z" fill="url(#orc-skin-grad)" /><path d="M5 4 L 6 4" stroke="#212121" /><path d="M8 4 L 9 4" stroke="#212121" /><path d="M4 7 L 6 7" stroke="#FFF" /><path d="M8 7 L 10 7" stroke="#FFF" /><g transform={isAttacking ? 'rotate(30 10 10)' : ''} style={{transition:'transform 0.1s'}}><path d="M10 10 L 14 10 L 14 8 L 10 8 Z" fill="#a1887f" /><path d="M12 8 L 12 6 L 13 6 L 13 8 Z" fill="#757575" /></g></g></svg>
-        case 'ORC_BERSERKER': return <svg width="32" height="40" viewBox="0 0 16 20" {...props}>{defs}<style>{idleAnim}{attackAnim(2)}</style><g className={isAttacking ? 'attacking' : 'idle'} style={attackStyle}><path d="M2 19 L 6 19 L 5 13 L 1 13 Z" fill="url(#metal-grad)" /><path d="M10 19 L 14 19 L 15 13 L 11 13 Z" fill="url(#metal-grad)" /><path d="M1 13 L 15 13 L 14 5 L 2 5 Z" fill="url(#leather-grad)" /><path d="M4 5 L 12 5 C 14 2, 10 -1, 8 -1 C 6 -1, 2 2, 4 5 Z" fill="url(#orc-berserk-skin-grad)" /><path d="M6 3 L 7 3" stroke="#212121" /><path d="M9 3 L 11 3" stroke="#d32f2f" strokeWidth="2" /><path d="M5 6 L 7 6" stroke="#FFF" /><g transform={isAttacking ? 'rotate(-45 13 8)' : ''} style={{transition:'transform 0.1s'}}><path d="M13 2 L 16 2 L 16 12 L 13 12 Z" fill="url(#metal-grad)" /><path d="M14 1 L 15 1 L 15 13 L 14 13 Z" fill="#e0e0e0" /></g></g></svg>
-        case 'OGRE_BRUTE': return <svg width="40" height="48" viewBox="0 0 20 24" {...props}>{defs}<style>{idleAnim}{attackAnim(3)}</style><g className={isAttacking ? 'attacking' : 'idle'} style={attackStyle}><path d="M3 23 L 9 23 L 9 17 L 3 17 Z" fill="url(#metal-grad)" /><path d="M11 23 L 17 23 L 17 17 L 11 17 Z" fill="url(#metal-grad)" /><path d="M2 17 L 18 17 C 20 12, 20 5, 18 2 L 2 2 C 0 5, 0 12, 2 17 Z" fill="url(#ogre-skin-grad)" /><path d="M5 7 L 8 7" stroke="#212121" strokeWidth="2" /><path d="M12 7 L 15 7" stroke="#212121" strokeWidth="2" /><path d="M6 12 L 14 12 L 12 14 L 8 14 Z" fill="#f5f5f5" /><g transform={isAttacking ? 'rotate(-30 18 10)' : ''} style={{transition:'transform 0.1s'}}><path d="M16 4 L 20 6 L 20 18 L 16 16 Z" fill="url(#wood-grad-dark)" /></g></g></svg>
+        case 'ORC_GRUNT': return (
+            <svg width="40" height="48" viewBox="0 0 20 24" {...props}>{defs}
+                <style>{`
+                    .grunt-body, .grunt-arm { transition: transform 0.1s; }
+                    .idle .grunt-body { animation: grunt-idle 3s infinite ease-in-out; transform-origin: 10px 20px; }
+                    @keyframes grunt-idle { 0%, 100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(-1px) rotate(-2deg); } 75% { transform: translateY(0px) rotate(2deg); } }
+                    
+                    .walk .grunt-body { animation: grunt-walk 0.8s infinite ease-in-out; transform-origin: 10px 20px; }
+                    @keyframes grunt-walk { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-2px) rotate(2deg); } }
+                    
+                    .attack .grunt-arm { animation: grunt-attack 0.4s ease-in-out; transform-origin: 15px 15px; }
+                    @keyframes grunt-attack { 0% { transform: rotate(0); } 50% { transform: rotate(-60deg); } 100% { transform: rotate(0); } }
+                `}</style>
+                <g className={animationState}>
+                    <g className="grunt-body">
+                        {/* Body */}
+                        <path d="M5,23 C0,20 2,8 10,8 C18,8 20,20 15,23 Z" fill="#8bc34a" filter="url(#felt-texture)" />
+                        {/* Ears */}
+                        <path d="M6,8 C 2,0 10,2 10,8" fill="#aed581" filter="url(#felt-texture)" />
+                        <path d="M14,8 C 18,0 10,2 10,8" fill="#aed581" filter="url(#felt-texture)" />
+                        {/* Eyes */}
+                        <circle cx="7" cy="11" r="2.5" fill="#e53935"/><circle cx="7" cy="11" r="1" fill="#c21807"/><path d="M6 10 l2 2 M8 10 l-2 2" stroke="#c21807" strokeWidth="0.5"/>
+                        <circle cx="13" cy="12" r="1.5" fill="#212121"/><circle cx="13" cy="12" r="0.5" fill="#000"/><path d="M12.5 11.5 l1 1 M13.5 11.5 l-1 1" stroke="#000" strokeWidth="0.5"/>
+                        {/* Mouth & Teeth */}
+                        <path d="M6,18 C8,19 12,19 14,18 L13,16 L7,16 Z" fill="#424242"/>
+                        <rect x="7" y="16" width="1" height="1.5" fill="#fafafa"/> <rect x="8.5" y="16" width="1" height="1.5" fill="#f5f5f5"/>
+                        <rect x="10" y="16" width="1" height="1.5" fill="#fafafa"/> <rect x="11.5" y="16" width="1" height="1.5" fill="#f5f5f5"/>
+                        {/* Arm */}
+                        <g className="grunt-arm">
+                            <path d="M15,15 L18,14 L18,17 L15,18 Z" fill="#8bc34a" filter="url(#felt-texture)"/>
+                            <path d="M17,15 L19,14 L19,4 L17,5 Z" fill="url(#wood-club-grad)" />
+                        </g>
+                    </g>
+                </g>
+            </svg>
+        );
+        case 'ORC_BERSERKER': return (
+            <svg width="48" height="56" viewBox="0 0 24 28" {...props}>{defs}
+                <style>{`
+                    .berserker-body, .berserker-arm { transition: transform 0.1s; }
+                    .idle .berserker-body { animation: berserker-idle 3.5s infinite ease-in-out; transform-origin: 12px 22px; }
+                    @keyframes berserker-idle { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.03, 0.97) translateY(-1px); } }
+
+                    .walk .berserker-body { animation: berserker-walk 1s infinite ease-in-out; transform-origin: 12px 22px; }
+                    @keyframes berserker-walk { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+
+                    .attack .berserker-arm { animation: berserker-attack 0.4s ease-in-out; transform-origin: 18px 16px; }
+                    @keyframes berserker-attack { 0%, 100% { transform: rotate(10deg) translateY(0); } 50% { transform: rotate(-50deg) translateY(2px); } }
+                `}</style>
+                <g className={animationState}>
+                    <g className="berserker-body">
+                        {/* Body */}
+                        <path d="M4,27 C-2,20 4,8 12,8 C20,8 26,20 20,27 Z" fill="#64b5f6" filter="url(#fur-texture)" />
+                        {/* Horns */}
+                        <path d="M8,8 C 2,2 10,4 10,8" fill="#e0e0e0"/>
+                        <path d="M16,8 C 22,2 14,4 14,8" fill="#e0e0e0"/>
+                        {/* Eye */}
+                        <circle cx="12" cy="13" r="3.5" fill="#ffeb3b"/><circle cx="12" cy="13" r="1.5" fill="#c8b900"/><path d="M11 12 l2 2 M13 12 l-2 2" stroke="#c8b900" strokeWidth="0.5"/>
+                         {/* Mouth & Teeth */}
+                        <path d="M8,20 C10,22 14,22 16,20 V 18 H 8 Z" fill="#424242"/>
+                        <rect x="8.5" y="18" width="1.5" height="2" fill="#fafafa"/><rect x="10.5" y="18" width="1.5" height="2" fill="#f5f5f5"/><rect x="12.5" y="18" width="1.5" height="2" fill="#fafafa"/>
+                        <rect x="9.5" y="20" width="1.5" height="1" fill="#fafafa"/><rect x="11.5" y="20" width="1.5" height="1" fill="#f5f5f5"/>
+                         {/* Arm & Axe */}
+                        <g className="berserker-arm">
+                           <path d="M18,16 L22,15 L22,19 L18,20 Z" fill="#64b5f6" filter="url(#fur-texture)" />
+                           <rect x="20" y="2" width="3" height="14" fill="url(#wood-club-grad)" />
+                           <path d="M19,2 L 24,2 L 26,6 L 17,6 Z" fill="url(#metal-axe-grad)" />
+                        </g>
+                    </g>
+                </g>
+            </svg>
+        );
+        case 'OGRE_BRUTE': return (
+            <svg width="64" height="72" viewBox="0 0 32 36" {...props}>{defs}
+                <style>{`
+                    .ogre-body, .ogre-arm { transition: transform 0.1s; }
+                    .idle .ogre-body { animation: ogre-idle 4s infinite ease-in-out; transform-origin: 16px 28px; }
+                    @keyframes ogre-idle { 0%, 100% { transform: translateY(0) scale(1,1); } 50% { transform: translateY(-2px) scale(1.04, 0.96); } }
+                    
+                    .walk .ogre-body { animation: ogre-walk 1.2s infinite ease-in-out; transform-origin: 16px 28px; }
+                    @keyframes ogre-walk { 0%, 100% { transform: translateY(0) rotate(-1deg) scaleX(1); } 50% { transform: translateY(-2px) rotate(1deg) scaleX(1.02); } }
+
+                    .attack .ogre-arm { animation: ogre-attack 0.5s ease-in-out; transform-origin: 25px 22px; }
+                    @keyframes ogre-attack { 0% { transform: rotate(0); } 40% { transform: rotate(-80deg); } 80% { transform: rotate(20deg); } 100% { transform: rotate(0); } }
+                `}</style>
+                <g className={animationState}>
+                     <g className="ogre-body">
+                        {/* Body */}
+                        <path d="M4,35 C -4,25 4,10 16,10 C 28,10 36,25 28,35 Z" fill="#ba68c8" filter="url(#fur-texture)" />
+                        {/* Eyes */}
+                        <circle cx="12" cy="16" r="2" fill="#212121"/><circle cx="12" cy="16" r="0.7" fill="#000"/><path d="M11.5 15.5 l1 1 M12.5 15.5 l-1 1" stroke="#000" strokeWidth="0.5"/>
+                        <circle cx="20" cy="16" r="2" fill="#212121"/><circle cx="20" cy="16" r="0.7" fill="#000"/><path d="M19.5 15.5 l1 1 M20.5 15.5 l-1 1" stroke="#000" strokeWidth="0.5"/>
+                        {/* Mouth & Teeth */}
+                        <path d="M8,26 C 12,28 20,28 24,26 L22,22 L10,22 Z" fill="#424242"/>
+                        <rect x="8" y="22" width="4" height="4" fill="#fafafa"/><rect x="14" y="22" width="4" height="4" fill="#f5f5f5"/><rect x="20" y="22" width="4" height="4" fill="#fafafa"/>
+                        {/* Arm & Club */}
+                        <g className="ogre-arm">
+                           <path d="M24,22 L29,20 L29,26 L24,28 Z" fill="#ba68c8" filter="url(#fur-texture)" />
+                           <path d="M28,21 L32,20 L32,2 L28,3 Z" fill="url(#wood-club-grad)" />
+                           <circle cx="31" cy="6" r="1.5" fill="#757575" /><circle cx="30" cy="12" r="1.5" fill="#757575" /><circle cx="31" cy="18" r="1.5" fill="#757575" />
+                        </g>
+                    </g>
+                </g>
+            </svg>
+        );
     }
 };
 
@@ -644,4 +817,6 @@ export const NorthernSoldierPortrait: React.FC<React.SVGProps<SVGSVGElement>> = 
 export const BriennePortrait: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <BrienneIcon {...props} animationState="idle" direction="right" />
 );
-export const EnemyPortrait = EnemyIcon;
+export const EnemyPortrait: React.FC<React.SVGProps<SVGSVGElement> & {type: EnemyType}> = ({type, ...props}) => (
+    <EnemyIcon {...props} animationState="idle" type={type} />
+);
