@@ -159,6 +159,6 @@ export interface RallyPointDragState {
 }
 
 export interface EnvironmentDecoration {
-  type: 'TREE_1' | 'TREE_2' | 'ROCK_1' | 'ROCK_2';
+  type: 'TREE_1' | 'TREE_2' | 'ROCK_1' | 'ROCK_2' | 'BUSH_1';
   position: Vector2D; // Grid Position
 }

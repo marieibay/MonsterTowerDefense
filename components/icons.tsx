@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import type { Vector2D, PlayerSpell, EnemyType, EnemyAnimationState, GroundUnitAnimationState } from '../types';
 import { RAIN_OF_FIRE_STATS, MAP_PATH } from '../constants';
@@ -77,7 +78,11 @@ export const SoundOffIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => 
 export const PlayIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => ( <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> );
 export const PauseIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => ( <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg> );
 export const UpgradeIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12 8l-6 6h12l-6-6zm-6 8h12v-2H6v2z"/></svg>);
-export const SellIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-12h2v6h-2V8zm0 8h2v-2h-2v2z"/></svg>);
+export const SellIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg {...props} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12.5 6.9c1.78 0 2.5.7 2.5 2.1H17c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16C8.85 5.58 7.3 6.84 7.3 8.77c0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c2.14-.46 3.5-1.63 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85z"/>
+    </svg>
+);
 export const ReinforcementsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V18h14v-1.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V18h6v-1.5c0-2.33-4.67-3.5-7-3.5z"/></svg>);
 export const RainOfFireIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-7.5 16.5A10 10 0 0 0 12 22a10 10 0 0 0 7.5-3.5A10 10 0 0 0 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="m14.47 13.5-1.41-1.41L15 10.17l-1.91-1.91-1.41 1.41-2.12-2.12 1.41-1.41L12.87 5.5 15 3.38l2.12 2.12-1.41 1.41L17.62 9l1.41-1.41L21.15 9.7l-2.12 2.12-1.41-1.41L15.71 12l1.91 1.91-2.15 2.15zM8.5 14.5l-1-1L9.41 11.5l-1.91-1.91-1 1-2.12-2.12 1-1L7.29 5.5 9.5 3.38l2.12 2.12-1 1L8.71 8.41l1.91 1.91-2.12 2.13z"/></svg>);
 export const OathkeeperStandIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>);
@@ -92,11 +97,9 @@ export const GameBackground: React.FC<React.SVGProps<HTMLDivElement>> = (props) 
 
     return (
         <div {...props}>
-            <img
-                src="assets/New for Adobe Stock.jpg"
-                alt="A winding path through a lush, green, and stylized forest, serving as the game board."
-                className="absolute inset-0 w-full h-full object-cover"
-                draggable="false"
+            <div 
+                className="absolute inset-0 w-full h-full"
+                style={{ background: 'radial-gradient(circle, #43a047, #1b5e20)' }} 
             />
             <svg className="absolute inset-0 w-full h-full pointer-events-none">
                  <defs>
@@ -361,6 +364,20 @@ export const TreeIcon2: React.FC = () => <svg width="64" height="80" viewBox="0 
 export const RockIcon1: React.FC = () => <svg width="40" height="32" viewBox="0 0 20 16"><defs><linearGradient id="rock1-grad" x1="0" y1="0" x2="0" y2="100%"><stop offset="0%" stopColor="#bdbdbd"/><stop offset="100%" stopColor="#757575"/></linearGradient></defs><path d="M2 14 L 18 14 L 16 6 L 4 6 Z" fill="url(#rock1-grad)" /></svg>;
 export const RockIcon2: React.FC = () => <svg width="40" height="32" viewBox="0 0 20 16"><defs><linearGradient id="rock2-grad" x1="0" y1="0" x2="0" y2="100%"><stop offset="0%" stopColor="#e0e0e0"/><stop offset="100%" stopColor="#9e9e9e"/></linearGradient></defs><path d="M1 14 H 19 L 17 8 L 14 4 L 5 8 Z" fill="url(#rock2-grad)" /></svg>;
 
+export const BushIcon1: React.FC = () => (
+    <svg width="48" height="32" viewBox="0 0 24 16">
+        <defs>
+            <radialGradient id="bush-grad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#81c784" />
+                <stop offset="100%" stopColor="#388e3c" />
+            </radialGradient>
+        </defs>
+        <ellipse cx="12" cy="10" rx="10" ry="6" fill="url(#bush-grad)" />
+        <ellipse cx="6" cy="12" rx="6" ry="4" fill="url(#bush-grad)" />
+        <ellipse cx="18" cy="12" rx="6" ry="4" fill="url(#bush-grad)" />
+    </svg>
+);
+
 // ===================================================================================
 // Units - Redesigned & Animated
 // ===================================================================================
@@ -426,6 +443,66 @@ export const NorthernSoldierIcon: React.FC<{ animationState: GroundUnitAnimation
         </svg>
     );
 };
+
+export const ReinforcementSoldierIcon: React.FC<{ animationState: GroundUnitAnimationState, direction: 'left' | 'right' }> = ({ animationState, direction }) => {
+    const css = `
+        .body, .arm, .leg { transition: transform 0.1s ease-in-out; }
+        .idle .body { animation: unit-idle 3s infinite ease-in-out; }
+        @keyframes unit-idle { 
+            0%, 100% { transform: translateY(0) scale(1, 1); } 
+            50% { transform: translateY(-1px) scale(1.02, 0.98); } 
+        }
+
+        .walk .body { animation: walk-bob 0.8s infinite ease-in-out; }
+        @keyframes walk-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1px); } }
+        .walk .right-leg { animation: walk-front-soldier 0.8s infinite ease-in-out; }
+        .walk .left-leg { animation: walk-back-soldier 0.8s infinite ease-in-out; }
+        .walk .spear-arm { animation: walk-spear 0.8s infinite ease-in-out; }
+        @keyframes walk-front-soldier { 0%, 100% { transform: rotate(5deg); } 50% { transform: rotate(20deg); } }
+        @keyframes walk-back-soldier { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(-20deg); } }
+        @keyframes walk-spear { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+
+        .attack .spear-arm { animation: spear-thrust 0.4s ease-in-out; }
+        @keyframes spear-thrust { 
+            0% { transform: translateX(0) rotate(0); } 
+            25% { transform: translateX(-4px) rotate(-10deg); } /* anticipation */
+            60% { transform: translateX(8px) rotate(5deg); } /* thrust */
+            100% { transform: translateX(0) rotate(0); } /* follow-through */
+        }
+
+        .soldier-group { transition: transform 0.6s, opacity 0.6s; transform-origin: bottom center; }
+        .die .soldier-group { transform: rotate(-80deg) translateY(15px); opacity: 0; }
+    `;
+    return (
+        <svg width="40" height="48" viewBox="0 0 20 24">
+            <defs>
+                <linearGradient id="armor-grad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#e0e0e0"/><stop offset="50%" stopColor="#fafafa"/><stop offset="100%" stopColor="#e0e0e0"/></linearGradient>
+                <linearGradient id="armor-dark-grad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#b0bec5"/><stop offset="50%" stopColor="#e0e0e0"/><stop offset="100%" stopColor="#b0bec5"/></linearGradient>
+                <linearGradient id="reinforcement-cloth-dark-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#66bb6a"/><stop offset="100%" stopColor="#388e3c"/></linearGradient>
+                <linearGradient id="reinforcement-cloth-light-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#81c784"/><stop offset="100%" stopColor="#4caf50"/></linearGradient>
+            </defs>
+            <style>{css}</style>
+            <g className={animationState} transform={direction === 'left' ? 'scale(-1, 1) translate(-20, 0)' : ''}>
+                <g className="soldier-group">
+                    <g className="leg left-leg" style={{ transformOrigin: '8px 15px' }}><path d="M7 23 L9 23 L9 18 L7 17 Z" fill="url(#reinforcement-cloth-dark-grad)" /><rect x="7" y="22" width="2" height="2" fill="#212121" /></g>
+                    <g className="leg right-leg" style={{ transformOrigin: '12px 15px' }}><path d="M11 23 L13 23 L13 17 L11 18 Z" fill="url(#reinforcement-cloth-light-grad)" /><rect x="11" y="22" width="2" height="2" fill="#424242" /></g>
+                    <g className="body" style={{ transformOrigin: '10px 22px' }}>
+                        <path d="M6 18 L14 18 L15 9 L5 9 Z" fill="url(#armor-dark-grad)" />
+                        <path d="M7 9 L13 9 L12 3 L8 3 Z" fill="url(#armor-grad)" />
+                        <path d="M7 6 L13 6 L13 7 L7 7 Z" fill="#37474f" /><path d="M8 5 L12 5 L12 6 L8 6 Z" fill="#ffcc80" />
+                        <path d="M6 3 L14 3 L10 0 Z" fill="#4caf50" stroke="#1b5e20" strokeWidth="0.5"/>
+                        <g className="spear-arm arm" style={{ transformOrigin: '13px 11px' }}>
+                            <path d="M13 10 L16 11 L16 14 L13 14 Z" fill="url(#armor-dark-grad)" />
+                            <rect x="15" y="-2" width="2" height="20" fill="#a1887f" />
+                            <path d="M15 -2 L17 -2 L16 -5 Z" fill="url(#armor-grad)" />
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </svg>
+    );
+};
+
 
 export const BrienneIcon: React.FC<{ animationState: GroundUnitAnimationState, direction: 'left' | 'right' }> = ({ animationState, direction }) => {
     const css = `
@@ -580,36 +657,6 @@ export const BrienneIcon: React.FC<{ animationState: GroundUnitAnimationState, d
         </svg>
     );
 };
-
-
-export const BannermanIcon: React.FC<{ animationState: GroundUnitAnimationState, direction: 'left' | 'right' }> = ({ animationState, direction, ...props }) => (
-     <svg width="32" height="40" viewBox="0 0 16 20" {...props}>
-        <style>{`
-            .body { transition: transform 0.1s; }
-            .idle .body { animation: unit-idle-banner 2.5s infinite ease-in-out; }
-            @keyframes unit-idle-banner { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1px); } }
-            
-            .walk .body { animation: walk-bob-banner 0.8s infinite ease-in-out; }
-            @keyframes walk-bob-banner { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1px); } }
-            
-            .attack .body { animation: attack-thrust-banner 0.4s ease-in-out; }
-            @keyframes attack-thrust-banner { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(2px); } }
-
-            @keyframes banner-wave { 0% { d: "M-2 1 C 0 0, 4 0, 6 1 L 6 7 C 4 8, 0 8, -2 7 Z"; } 50% { d: "M-2 1 C 0 2, 4 2, 6 1 L 6 7 C 4 6, 0 6, -2 7 Z"; } 100% { d: "M-2 1 C 0 0, 4 0, 6 1 L 6 7 C 4 8, 0 8, -2 7 Z"; } }
-        `}</style>
-        <g className={animationState} transform={direction === 'left' ? 'scale(-1, 1) translate(-16, 0)' : ''}>
-            <g className="body">
-                <path d="M4 19 L 7 19 L 7 14 L 4 14 Z" fill="#546e7a" />
-                <path d="M9 19 L 12 19 L 12 14 L 9 14 Z" fill="#546e7a" />
-                <path d="M3 14 L 13 14 L 14 7 L 2 7 Z" fill="#2e7d32"/>
-                <path d="M5 6 L 11 6 L 11 2 L 5 2 Z" fill="#cfd8dc"/>
-                <path d="M6 4 L 10 4 L 10 5 L 6 5 Z" fill="#ffcc80" />
-            </g>
-            <rect x="0" y="0" width="2" height="18" fill="#a1887f"/>
-            <path fill="#eceff1" style={{ animation: 'banner-wave 3s infinite ease-in-out' }} d="M-2 1 C 0 0, 4 0, 6 1 L 6 7 C 4 8, 0 8, -2 7 Z" />
-        </g>
-    </svg>
-);
 
 export const EnemyIcon: React.FC<{type: EnemyType, animationState: EnemyAnimationState}> = ({ type, animationState, ...props }) => {
     const defs = (

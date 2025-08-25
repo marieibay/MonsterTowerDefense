@@ -1,3 +1,4 @@
+
 import type { Vector2D } from './types';
 import { GAME_CONFIG } from './constants';
 
@@ -19,17 +20,22 @@ export class AudioManager {
   private audioContext: AudioContext;
   private isMuted: boolean = false;
   private sfxGain: GainNode;
+  private musicGain: GainNode;
   private musicElement: HTMLAudioElement;
+  private musicSource: MediaElementAudioSourceNode | null = null;
 
   constructor() {
     this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     this.sfxGain = this.audioContext.createGain();
     this.sfxGain.connect(this.audioContext.destination);
+    
+    this.musicGain = this.audioContext.createGain();
+    this.musicGain.gain.value = 0.3; // Default music volume
+    this.musicGain.connect(this.audioContext.destination);
 
     const musicEl = document.getElementById('bg-music');
     if (musicEl instanceof HTMLAudioElement) {
         this.musicElement = musicEl;
-        this.musicElement.volume = 0.3; // Set a default volume
     } else {
         console.error("Background music element not found or is not an audio element.");
         // Create a dummy element to avoid errors
@@ -37,8 +43,20 @@ export class AudioManager {
     }
   }
 
+  public resumeContext() {
+    if (this.audioContext.state === 'suspended') {
+      this.audioContext.resume().then(() => {
+          // The context is unlocked, now we can create the MediaElementSource
+          if (!this.musicSource && this.musicElement.src) {
+              this.musicSource = this.audioContext.createMediaElementSource(this.musicElement);
+              this.musicSource.connect(this.musicGain);
+          }
+      }).catch(e => console.error("AudioContext could not be resumed:", e));
+    }
+  }
+
   private playTone(freq: number, duration: number, type: OscillatorType | 'noise' = 'square', volume: number = 0.5, decay: boolean = true) {
-    if (this.isMuted || this.audioContext.state === 'suspended') return;
+    if (this.isMuted || this.audioContext.state !== 'running') return;
 
     const gainNode = this.audioContext.createGain();
     gainNode.connect(this.sfxGain);
@@ -71,7 +89,6 @@ export class AudioManager {
   
   public playSound(sound: 'ARROW' | 'MAGIC_BOLT' | 'CANNONBALL' | 'explosion' | 'build' | 'upgradeTower' | 'rainOfFire' | 'enemyDeath' | 'soldierAttack' | 'heroAttack' | 'heroAbility' | 'lifeLost' | 'gameOver' | 'victory' | 'enemyAttack' | 'uiClick' | 'waveStart') {
     if (this.isMuted) return;
-    this.audioContext.resume();
 
     switch(sound) {
       case 'ARROW':
@@ -144,8 +161,8 @@ export class AudioManager {
 
   public playMusic() {
     if (this.isMuted) return;
-    this.audioContext.resume();
-    this.musicElement.play().catch(error => console.log("Music play was prevented.", error));
+    this.resumeContext();
+    this.musicElement.play().catch(error => console.log("Music play was prevented. Requires user interaction.", error));
   }
 
   public stopMusic() {
@@ -155,12 +172,17 @@ export class AudioManager {
 
   public toggleMute(isMuted: boolean) {
     this.isMuted = isMuted;
-    this.musicElement.muted = isMuted;
-    if (isMuted) {
-      this.sfxGain.gain.setValueAtTime(0, this.audioContext.currentTime);
+    const sfxGainValue = isMuted ? 0 : 1;
+    const musicGainValue = isMuted ? 0 : 0.3;
+    
+    if (this.audioContext.state === 'running') {
+        this.sfxGain.gain.setValueAtTime(sfxGainValue, this.audioContext.currentTime);
+        this.musicGain.gain.setValueAtTime(musicGainValue, this.audioContext.currentTime);
     } else {
-      this.audioContext.resume();
-      this.sfxGain.gain.setValueAtTime(1, this.audioContext.currentTime);
+        // If context is not running, just set the value directly.
+        // It will be applied when the context resumes.
+        this.sfxGain.gain.value = sfxGainValue;
+        this.musicGain.gain.value = musicGainValue;
     }
   }
 }

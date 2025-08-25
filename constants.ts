@@ -1,4 +1,5 @@
 
+
 import { Vector2D, TowerType, EnemyType, Wave, ProjectileType, DamageType, ArmorType, EnvironmentDecoration } from './types';
 
 export const GAME_CONFIG = {
@@ -45,17 +46,23 @@ export const TOWER_SPOTS: Vector2D[] = [
 ];
 
 export const ENVIRONMENT_DECORATIONS: EnvironmentDecoration[] = [
-    // These are now baked into the background image for a more integrated look
-    // { type: 'TREE_1', position: { x: -8, y: 12 } },
-    // { type: 'TREE_2', position: { x: 0, y: 19 } },
-    // { type: 'ROCK_1', position: { x: 4, y: 17 } },
-    // { type: 'TREE_1', position: { x: 8, y: 12 } },
-    // { type: 'ROCK_2', position: { x: 13, y: 15 } },
-    // { type: 'TREE_2', position: { x: 17, y: 24 } },
-    // { type: 'ROCK_1', position: { x: 20, y: 17 } },
-    // { type: 'TREE_1', position: { x: 26, y: 12 } },
-    // { type: 'ROCK_2', position: { x: 32, y: 17 } },
-    // { type: 'TREE_2', position: { x: 38, y: 13 } },
+    { type: 'TREE_1', position: { x: -8, y: 12 } },
+    { type: 'TREE_2', position: { x: 0, y: 19 } },
+    { type: 'BUSH_1', position: { x: 4, y: 17 } },
+    { type: 'TREE_1', position: { x: 8, y: 12 } },
+    { type: 'BUSH_1', position: { x: 13, y: 15 } },
+    { type: 'TREE_2', position: { x: 17, y: 24 } },
+    { type: 'BUSH_1', position: { x: 20, y: 17 } },
+    { type: 'TREE_1', position: { x: 26, y: 12 } },
+    { type: 'BUSH_1', position: { x: 32, y: 17 } },
+    { type: 'TREE_2', position: { x: 38, y: 13 } },
+    // Extra decorations for a lusher feel
+    { type: 'BUSH_1', position: { x: -2, y: 17 } },
+    { type: 'BUSH_1', position: { x: 11, y: 18 } },
+    { type: 'TREE_1', position: { x: 14, y: 13 } },
+    { type: 'BUSH_1', position: { x: 22, y: 15 } },
+    { type: 'TREE_2', position: { x: 30, y: 14 } },
+    { type: 'BUSH_1', position: { x: 34, y: 19 } },
 ];
 
 interface TowerLevelStats {
@@ -130,12 +137,12 @@ export const RAIN_OF_FIRE_STATS = {
 
 export const HERO_STATS = {
     name: 'Brienne of Tarth',
-    health: 200,
-    damage: 10,
-    attackRate: 1600,
+    health: 120,
+    damage: 8,
+    attackRate: 1800,
     range: 50, // Melee range
     speed: 120,
-    respawnTime: 20000,
+    respawnTime: 40000,
     blockingRadius: 30,
     patrolRange: 150, // pixels from rally point to find enemies
     patrolRadius: 40, // pixels from rally point to wander
@@ -166,10 +173,10 @@ export const ENEMY_STATS: Record<EnemyType, EnemyStat> = {
 };
 
 export const WAVES: Wave[] = [
-  { enemies: Array(8).fill('ORC_GRUNT'), spawnRate: 1800 },
-  { enemies: [...Array(12).fill('ORC_GRUNT'), ...Array(5).fill('ORC_BERSERKER')], spawnRate: 1400 },
-  { enemies: [...Array(6).fill('ORC_GRUNT'), ...Array(10).fill('ORC_BERSERKER')], spawnRate: 1200 },
-  { enemies: [...Array(15).fill('ORC_BERSERKER'), ...Array(3).fill('OGRE_BRUTE')], spawnRate: 1000 },
-  { enemies: [...Array(10).fill('ORC_GRUNT'), ...Array(10).fill('ORC_BERSERKER'), ...Array(6).fill('OGRE_BRUTE')], spawnRate: 900 },
-  { enemies: [...Array(12).fill('ORC_BERSERKER'), ...Array(10).fill('OGRE_BRUTE')], spawnRate: 1300 },
+  { enemies: Array(8).fill('ORC_GRUNT'), spawnRate: 2200 },
+  { enemies: [...Array(12).fill('ORC_GRUNT'), ...Array(5).fill('ORC_BERSERKER')], spawnRate: 1800 },
+  { enemies: [...Array(6).fill('ORC_GRUNT'), ...Array(10).fill('ORC_BERSERKER')], spawnRate: 1600 },
+  { enemies: [...Array(15).fill('ORC_BERSERKER'), ...Array(3).fill('OGRE_BRUTE')], spawnRate: 1500 },
+  { enemies: [...Array(10).fill('ORC_GRUNT'), ...Array(10).fill('ORC_BERSERKER'), ...Array(6).fill('OGRE_BRUTE')], spawnRate: 1400 },
+  { enemies: [...Array(12).fill('ORC_BERSERKER'), ...Array(10).fill('OGRE_BRUTE')], spawnRate: 1700 },
 ];

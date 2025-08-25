@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import type { GameStatus, SelectableUnit, Tower, Enemy, Soldier, Hero, PlayerSpell } from '../types';
 import { 
@@ -209,7 +210,10 @@ export const HUD: React.FC<HUDProps> = ({
   const waveDisplay = gameStatus === 'IDLE' ? 0 : currentWave;
     
   return (
-    <div className="absolute inset-0 text-white pointer-events-none p-4 text-xs tracking-tighter flex flex-col justify-between">
+    <div 
+        className="absolute inset-0 text-white pointer-events-none p-4 text-xs tracking-tighter flex flex-col justify-between"
+        style={{ zIndex: 9000 }}
+    >
       {/* Top Bar */}
       <div className="w-full flex justify-between items-start">
         {/* Top Left: Stats */}
@@ -286,7 +290,7 @@ export const HUD: React.FC<HUDProps> = ({
         {/* Bottom Right: Contextual Panel */}
         <div className="flex flex-col items-center">
             {selectedUnit && !('level' in selectedUnit) ? (
-            <SelectionDetails unit={selectedUnit} onUpgrade={onUpgradeTower} onSell={onSellTower} gold={gold}/>
+                 <SelectionDetails unit={selectedUnit} onUpgrade={onUpgradeTower} onSell={onSellTower} gold={gold}/>
             ) : (
             <>
                 {gameStatus === 'WAVE_IN_PROGRESS' && (

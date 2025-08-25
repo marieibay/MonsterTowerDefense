@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, useLayoutEffect } from 'react';
 import { GameBoard } from './components/GameBoard';
 import { HUD } from './components/HUD';
-import { TowerMenu, TowerControlMenu } from './components/TowerMenu';
+import { TowerMenu } from './components/TowerMenu';
+import { TowerControlMenu } from './components/TowerControlMenu';
 import { Modal } from './components/Modal';
 import { 
   TOWER_STATS, 
@@ -106,6 +107,25 @@ const App: React.FC = () => {
     window.addEventListener('resize', updateScale);
     return () => window.removeEventListener('resize', updateScale);
   }, []);
+
+  useEffect(() => {
+    // Browsers require a user interaction to start the AudioContext.
+    // This effect adds a one-time event listener to resume the context on the first click/touch.
+    const resumeAudioContext = () => {
+        audioManager.resumeContext();
+        // The listener is removed after the first user interaction.
+        document.body.removeEventListener('mousedown', resumeAudioContext);
+        document.body.removeEventListener('touchstart', resumeAudioContext);
+    };
+
+    document.body.addEventListener('mousedown', resumeAudioContext);
+    document.body.addEventListener('touchstart', resumeAudioContext);
+
+    return () => {
+        document.body.removeEventListener('mousedown', resumeAudioContext);
+        document.body.removeEventListener('touchstart', resumeAudioContext);
+    };
+}, [audioManager]);
 
   useEffect(() => {
     audioManager.toggleMute(isMuted);
@@ -325,13 +345,17 @@ const App: React.FC = () => {
     const towerToSell = towers.find(t => t.id === towerId);
     if (!towerToSell) return;
 
+    const towerPosition = { ...towerToSell.position };
     const sellValue = TOWER_STATS[towerToSell.type][towerToSell.level - 1].sellValue;
     setStats(s => ({...s, gold: s.gold + sellValue}));
     setTowers(prev => prev.filter(t => t.id !== towerId));
+    
     if (towerToSell.type === 'NORTHERN_BARRACKS') {
       setSoldiers(prev => prev.filter(s => s.barracksId !== towerId));
     }
-    deselectAll();
+    
+    setSelectedUnit(null);
+    setSelectedSpot(towerPosition);
   }, [towers, audioManager]);
   
   const handleCastSpell = useCallback((spell: PlayerSpell) => {
@@ -391,14 +415,19 @@ const App: React.FC = () => {
     if (activeSpell) return;
       
     if (selectedUnit) {
-        if ('abilityCooldown' in selectedUnit) { // It's the Hero
+        // If the selected unit is the hero, start a rally point drag
+        if ('abilityCooldown' in selectedUnit) { 
             setRallyPointDrag({
                 startPosition: selectedUnit.position,
                 currentPosition: screenPos,
                 unitId: selectedUnit.id,
             });
+        } else {
+            // Any other unit is selected (e.g., a tower), deselect it on map click.
+            deselectAll();
         }
     } else {
+      // Nothing was selected, so this click deselects any active menus (like build menu)
       deselectAll();
     }
   }, [activeSpell, selectedUnit, getGameCoordinates]);
@@ -417,20 +446,19 @@ const App: React.FC = () => {
       if (activeSpell) {
           if (activeSpell === 'REINFORCEMENTS') {
               const newReinforcements: Reinforcement[] = [];
-              const closestPathGridPoint = findClosestPathPoint({x: screenPos.x / (GAME_CONFIG.tileWidth / 2), y: screenPos.y / (GAME_CONFIG.tileHeight / 2)});
-              const destination = gameToScreen(closestPathGridPoint);
               for(let i = 0; i < REINFORCEMENTS_STATS.count; i++) {
+                  const spawnPos = {x: screenPos.x + (i * 30 - 15), y: screenPos.y};
                   newReinforcements.push({
                       id: Date.now() + i,
-                      position: {x: screenPos.x + (i * 30 - 15), y: screenPos.y},
+                      position: { ...spawnPos },
                       health: REINFORCEMENTS_STATS.health,
                       maxHealth: REINFORCEMENTS_STATS.health,
                       targetId: null,
                       attackCooldown: 0,
                       lifetime: REINFORCEMENTS_STATS.duration,
-                      animationState: 'walk',
+                      animationState: 'idle',
                       direction: 'right',
-                      destination: destination,
+                      destination: { ...spawnPos },
                       damage: REINFORCEMENTS_STATS.damage,
                       range: REINFORCEMENTS_STATS.range,
                       speed: REINFORCEMENTS_STATS.speed,
@@ -466,7 +494,7 @@ const App: React.FC = () => {
       } else if (!selectedUnit && !selectedSpot) {
           deselectAll();
       }
-  }, [rallyPointDrag, activeSpell, setRallyPoint, selectedUnit, selectedSpot, audioManager, getGameCoordinates, findClosestPathPoint]);
+  }, [rallyPointDrag, activeSpell, setRallyPoint, selectedUnit, selectedSpot, audioManager, getGameCoordinates]);
 
   const cancelRallyPointDrag = useCallback(() => {
     setRallyPointDrag(null);
@@ -983,12 +1011,39 @@ const App: React.FC = () => {
           return true;
       });
 
-      currentEnemies = currentEnemies.map((enemy): Enemy | null => {
+      currentEnemies = currentEnemies.map((enemy, _index, E) : Enemy | null => {
         if (enemy.health <= 0) {
             killedEnemies.push(enemy);
             audioManager.playSound('enemyDeath');
             return null;
         }
+        
+        // --- Enemy Separation Logic ---
+        const separationVector = { x: 0, y: 0 };
+        const SEPARATION_RADIUS = 35; // How close enemies can get
+        const SEPARATION_FACTOR = 1.0; // How strongly they push each other
+        let neighbors = 0;
+        
+        for (const otherEnemy of E) {
+            if (!otherEnemy || enemy.id === otherEnemy.id) continue;
+            const dist = getDistance(enemy.position, otherEnemy.position);
+            if (dist > 0 && dist < SEPARATION_RADIUS) {
+                // Calculate vector pointing away from the other enemy and normalize it
+                separationVector.x += (enemy.position.x - otherEnemy.position.x) / dist;
+                separationVector.y += (enemy.position.y - otherEnemy.position.y) / dist;
+                neighbors++;
+            }
+        }
+
+        if (neighbors > 0) {
+            // Average the separation vector and apply a small nudge
+            const avgSeparationX = separationVector.x / neighbors;
+            const avgSeparationY = separationVector.y / neighbors;
+            
+            enemy.position.x += avgSeparationX * SEPARATION_FACTOR;
+            enemy.position.y += avgSeparationY * SEPARATION_FACTOR;
+        }
+        // --- End Separation Logic ---
 
         let newAnimationState = enemy.animationState;
         if (newAnimationState === 'attack') {
@@ -1009,21 +1064,29 @@ const App: React.FC = () => {
         }
         
         if (!isBlocked) {
-            const allMeleeUnits: (Soldier | Reinforcement)[] = [...currentSoldiers.filter(s => s.health > 0 && s.animationState !== 'die' && s.respawnTimer <= 0), ...currentReinforcements.filter(r => r.health > 0)];
+            const allMeleeUnits: (Soldier | Hero | Reinforcement)[] = [
+                ...currentSoldiers.filter(s => s.health > 0 && s.animationState !== 'die' && s.respawnTimer <= 0), 
+                ...currentReinforcements.filter(r => r.health > 0)
+            ];
+             if (currentHero.health > 0 && currentHero.respawnTimer <= 0) {
+                allMeleeUnits.push(currentHero);
+            }
             allMeleeUnits.forEach(unit => {
                 const dist = getDistance(enemy.position, unit.position);
-                const blockingRadius = 'barracksId' in unit ? SOLDIER_STATS.blockingRadius : REINFORCEMENTS_STATS.blockingRadius;
+                let blockingRadius;
+                if ('barracksId' in unit) blockingRadius = SOLDIER_STATS.blockingRadius;
+                else if ('abilityCooldown' in unit) blockingRadius = HERO_STATS.blockingRadius;
+                else blockingRadius = REINFORCEMENTS_STATS.blockingRadius;
+                
                 if (dist < blockingRadius && dist < closestDist) {
-                    closestDist = dist; isBlocked = true; blocker = unit;
-                    blockerType = 'barracksId' in unit ? 'soldier' : 'reinforcement';
+                    closestDist = dist; 
+                    isBlocked = true; 
+                    blocker = unit;
+                    if ('barracksId' in unit) blockerType = 'soldier';
+                    else if ('abilityCooldown' in unit) blockerType = 'hero';
+                    else blockerType = 'reinforcement';
                 }
             });
-            if (currentHero.health > 0 && currentHero.respawnTimer <= 0) {
-                const dist = getDistance(enemy.position, currentHero.position);
-                if (dist < HERO_STATS.blockingRadius && dist < closestDist) {
-                    isBlocked = true; blocker = currentHero; blockerType = 'hero';
-                }
-            }
         }
 
         const enemyStats = ENEMY_STATS[enemy.type];
@@ -1179,6 +1242,13 @@ const App: React.FC = () => {
     return () => clearInterval(intervalId);
   }, [gameStatus, isPaused, currentWave, enemies, towers, projectiles, soldiers, hero, reinforcements, audioManager, selectedUnit, startNextWave]);
 
+  const selectedTower = useMemo(() => {
+    if (selectedUnit && 'level' in selectedUnit) {
+      return selectedUnit;
+    }
+    return null;
+  }, [selectedUnit]);
+
   return (
     <div ref={containerRef} className="w-full h-full flex items-center justify-center bg-black">
       <div 
@@ -1214,7 +1284,7 @@ const App: React.FC = () => {
           selectedUnit={selectedUnit}
           rallyPointDrag={rallyPointDrag}
         />
-        {selectedSpot && (
+        {selectedSpot && !selectedTower && (
           <TowerMenu
             position={gameToScreen(selectedSpot)}
             onBuild={handleBuildTower}
@@ -1222,13 +1292,12 @@ const App: React.FC = () => {
             gold={stats.gold}
           />
         )}
-        {selectedUnit && 'level' in selectedUnit && (
+        {selectedTower && (
           <TowerControlMenu
-            tower={selectedUnit}
+            tower={selectedTower}
             gold={stats.gold}
             onUpgrade={handleUpgradeTower}
             onSell={handleSellTower}
-            onClose={deselectAll}
           />
         )}
          <HUD 

@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { TOWER_SPOTS, GAME_CONFIG, MAP_PATH, HERO_STATS, REINFORCEMENTS_STATS, HERO_START_GRID_POS, ENVIRONMENT_DECORATIONS } from '../constants';
 import type { Tower, Enemy, Vector2D, Projectile, Soldier, Hero, SelectableUnit, Reinforcement, Explosion, PlayerSpell, GoldParticle, RallyPointDragState, EnvironmentDecoration } from '../types';
@@ -18,7 +19,7 @@ import {
     GameBackground,
     SelectionCircle,
     RallyPointFlag,
-    BannermanIcon,
+    ReinforcementSoldierIcon,
     Explosion as ExplosionIcon,
     TargetCursor,
     CoinIcon,
@@ -30,6 +31,7 @@ import {
     TreeIcon2,
     RockIcon1,
     RockIcon2,
+    BushIcon1,
 } from './icons';
 import { SOLDIER_STATS } from '../constants';
 
@@ -56,6 +58,7 @@ const DecorationComponent: React.FC<{ decoration: EnvironmentDecoration }> = Rea
         case 'TREE_2': Icon = TreeIcon2; break;
         case 'ROCK_1': Icon = RockIcon1; break;
         case 'ROCK_2': Icon = RockIcon2; break;
+        case 'BUSH_1': Icon = BushIcon1; break;
     }
     const screenPos = gameToScreen(decoration.position);
 
@@ -174,7 +177,7 @@ const ReinforcementComponent: React.FC<{ reinforcement: Reinforcement }> = React
             opacity: reinforcement.lifetime < 2000 ? lifetimePercentage / 100 : 1,
           }}
         >
-            <BannermanIcon animationState={reinforcement.animationState} direction={reinforcement.direction} />
+            <ReinforcementSoldierIcon animationState={reinforcement.animationState} direction={reinforcement.direction} />
             <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-6 h-1 bg-black rounded-full overflow-hidden border border-gray-500">
                 <div className="h-full bg-green-400 rounded-full" style={{ width: `${healthPercentage}%` }} />
             </div>

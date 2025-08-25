@@ -1,3 +1,5 @@
+
+
 import React from 'react';
 import type { GameStatus } from '../types';
 import { UIPanel, UIButton } from './icons';
@@ -17,7 +19,10 @@ export const Modal: React.FC<ModalProps> = ({ status, onRestart }) => {
     : 'The enemy horde has broken through.';
 
   return (
-    <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+    <div 
+        className="absolute inset-0 bg-black/70 flex items-center justify-center p-4"
+        style={{ zIndex: 25000 }}
+    >
       <div className="relative p-2 text-center text-white w-full max-w-lg">
         <UIPanel 
           className="absolute inset-0 w-full h-full" 
