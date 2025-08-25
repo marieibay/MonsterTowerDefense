@@ -278,14 +278,16 @@ const App: React.FC = () => {
       };
 
       if (towerType === 'NORTHERN_BARRACKS') {
-          const rallyPoint = findClosestPathPoint(selectedSpot);
+          const rallyPointGrid = findClosestPathPoint(selectedSpot);
+          const rallyPointScreen = gameToScreen(rallyPointGrid);
+          newTower.rallyPoint = rallyPointScreen;
+          
           const newSoldiers: Soldier[] = [];
           for (let i = 0; i < SOLDIER_STATS.count; i++) {
               const angle = (i / SOLDIER_STATS.count) * 2 * Math.PI;
-              const screenRallyPos = gameToScreen(rallyPoint);
               const individualRallyPoint = { 
-                  x: screenRallyPos.x + Math.cos(angle) * 25,
-                  y: screenRallyPos.y + Math.sin(angle) * 25
+                  x: rallyPointScreen.x + Math.cos(angle) * 25,
+                  y: rallyPointScreen.y + Math.sin(angle) * 25
               };
               newSoldiers.push({
                   id: newTower.id + i + 1,
@@ -293,7 +295,7 @@ const App: React.FC = () => {
                   barracksId: newTower.id,
                   position: { ...individualRallyPoint },
                   rallyPoint: { ...individualRallyPoint },
-                  gridPosition: rallyPoint,
+                  gridPosition: rallyPointGrid,
                   health: SOLDIER_STATS.health,
                   maxHealth: SOLDIER_STATS.health,
                   damage: SOLDIER_STATS.damage,
@@ -387,11 +389,49 @@ const App: React.FC = () => {
     });
   }, [audioManager]);
 
-  const setRallyPoint = useCallback((screenPos: Vector2D) => {
-    if (selectedUnit && 'health' in selectedUnit && selectedUnit.id === hero.id) {
-       setHero(h => ({ ...h, rallyPoint: screenPos, targetId: null }));
-    }
-  }, [selectedUnit, hero.id]);
+  const handleSetRallyPoint = useCallback((unitId: number, screenPos: Vector2D) => {
+      if (hero.id === unitId) {
+          setHero(h => ({ ...h, rallyPoint: screenPos, targetId: null }));
+          return;
+      }
+
+      const towerIndex = towers.findIndex(t => t.id === unitId && t.type === 'NORTHERN_BARRACKS');
+      if (towerIndex !== -1) {
+          const barracks = towers[towerIndex];
+          const barracksScreenPos = gameToScreen(barracks.position);
+          const rallyRange = TOWER_STATS.NORTHERN_BARRACKS[barracks.level - 1].range;
+
+          let newRallyPointScreen = screenPos;
+          if (getDistance(barracksScreenPos, screenPos) > rallyRange) {
+              const dir = { x: screenPos.x - barracksScreenPos.x, y: screenPos.y - barracksScreenPos.y };
+              const dist = getDistance(barracksScreenPos, screenPos);
+              newRallyPointScreen = {
+                  x: barracksScreenPos.x + (dir.x / dist) * rallyRange,
+                  y: barracksScreenPos.y + (dir.y / dist) * rallyRange,
+              };
+          }
+
+          setTowers(prevTowers => prevTowers.map(t => 
+              t.id === unitId ? { ...t, rallyPoint: newRallyPointScreen } : t
+          ));
+          
+          setSoldiers(prevSoldiers => {
+              const soldiersOfThisBarracks = prevSoldiers.filter(s => s.barracksId === unitId);
+              return prevSoldiers.map(s => {
+                  if (s.barracksId === unitId) {
+                      const soldierIndex = soldiersOfThisBarracks.findIndex(sib => sib.id === s.id);
+                      const angle = (soldierIndex / soldiersOfThisBarracks.length) * 2 * Math.PI;
+                      const individualRallyPoint = { 
+                          x: newRallyPointScreen.x + Math.cos(angle) * 25,
+                          y: newRallyPointScreen.y + Math.sin(angle) * 25
+                      };
+                      return { ...s, rallyPoint: individualRallyPoint, targetId: null };
+                  }
+                  return s;
+              });
+          });
+      }
+  }, [hero.id, towers]);
 
   const getGameCoordinates = useCallback((e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>): Vector2D => {
       const rect = e.currentTarget.getBoundingClientRect();
@@ -415,19 +455,22 @@ const App: React.FC = () => {
     if (activeSpell) return;
       
     if (selectedUnit) {
-        // If the selected unit is the hero, start a rally point drag
-        if ('abilityCooldown' in selectedUnit) { 
+        if ('abilityCooldown' in selectedUnit) { // Hero
             setRallyPointDrag({
-                startPosition: selectedUnit.position,
+                startPosition: selectedUnit.rallyPoint,
+                currentPosition: screenPos,
+                unitId: selectedUnit.id,
+            });
+        } else if ('level' in selectedUnit && selectedUnit.type === 'NORTHERN_BARRACKS') { // Barracks
+             setRallyPointDrag({
+                startPosition: selectedUnit.rallyPoint || gameToScreen(selectedUnit.position),
                 currentPosition: screenPos,
                 unitId: selectedUnit.id,
             });
         } else {
-            // Any other unit is selected (e.g., a tower), deselect it on map click.
             deselectAll();
         }
     } else {
-      // Nothing was selected, so this click deselects any active menus (like build menu)
       deselectAll();
     }
   }, [activeSpell, selectedUnit, getGameCoordinates]);
@@ -488,13 +531,13 @@ const App: React.FC = () => {
       }
       
       if (rallyPointDrag) {
-          setRallyPoint(screenPos);
+          handleSetRallyPoint(rallyPointDrag.unitId, screenPos);
           setRallyPointDrag(null);
           setSelectedUnit(null);
       } else if (!selectedUnit && !selectedSpot) {
           deselectAll();
       }
-  }, [rallyPointDrag, activeSpell, setRallyPoint, selectedUnit, selectedSpot, audioManager, getGameCoordinates]);
+  }, [rallyPointDrag, activeSpell, handleSetRallyPoint, selectedUnit, selectedSpot, audioManager, getGameCoordinates]);
 
   const cancelRallyPointDrag = useCallback(() => {
     setRallyPointDrag(null);
@@ -627,13 +670,23 @@ const App: React.FC = () => {
         currentHero.respawnTimer = Math.max(0, currentHero.respawnTimer - msPerFrame);
         if (currentHero.respawnTimer <= 0) {
             currentHero.health = currentHero.maxHealth;
-            currentHero.position = gameToScreen(HERO_START_GRID_POS);
-            currentHero.rallyPoint = gameToScreen(HERO_START_GRID_POS);
+            const respawnPosition = currentHero.deathPosition || gameToScreen(HERO_START_GRID_POS);
+            currentHero.position = respawnPosition;
+            currentHero.rallyPoint = respawnPosition;
             currentHero.animationState = 'idle';
+            currentHero.deathPosition = undefined;
         }
     } else if (currentHero.health > 0) {
+        // Health Regeneration
+        if (currentHero.health < currentHero.maxHealth) {
+            if (now - (currentHero.timeSinceCombat || 0) > HERO_STATS.healthRegenDelay) {
+                const healthToRegen = HERO_STATS.healthRegenRate * timeDelta;
+                currentHero.health = Math.min(currentHero.maxHealth, currentHero.health + healthToRegen);
+            }
+        }
+
         let newHeroTargetId = currentHero.targetId;
-        const newAttackCooldown = Math.max(0, currentHero.attackCooldown - msPerFrame);
+        currentHero.attackCooldown = Math.max(0, currentHero.attackCooldown - msPerFrame);
         let newHeroPatrolTarget = currentHero.patrolTarget;
         let newIdleTimer = Math.max(0, (currentHero.idleTimer || 0) - msPerFrame);
 
@@ -669,7 +722,7 @@ const App: React.FC = () => {
 
             if (distanceToTarget <= HERO_STATS.range) {
                 currentHero.animationState = 'idle';
-                if (newAttackCooldown <= 0) {
+                if (currentHero.attackCooldown <= 0) {
                     audioManager.playSound('heroAttack');
                     const targetIndex = currentEnemies.findIndex(e => e.id === newHeroTargetId);
                     if (targetIndex !== -1) {
@@ -678,6 +731,7 @@ const App: React.FC = () => {
                         currentEnemies[targetIndex] = { ...targetEnemy, health: targetEnemy.health - damage };
                     }
                     currentHero.attackCooldown = HERO_STATS.attackRate;
+                    currentHero.timeSinceCombat = now;
                     setAttackingState(currentHero.id, 400);
                 }
             } 
@@ -719,7 +773,6 @@ const App: React.FC = () => {
             }
         }
         currentHero.targetId = newHeroTargetId;
-        currentHero.attackCooldown = newAttackCooldown;
         currentHero.patrolTarget = newHeroPatrolTarget;
         currentHero.idleTimer = newIdleTimer;
     }
@@ -812,13 +865,25 @@ const App: React.FC = () => {
         let newPatrolTarget = soldier.patrolTarget;
         let newIdleTimer = Math.max(0, (soldier.idleTimer || 0) - msPerFrame);
         
+        const barracks = currentTowers.find(t => t.id === soldier.barracksId);
+        const barracksScreenPos = barracks ? gameToScreen(barracks.position) : null;
+        const barracksRange = barracks ? TOWER_STATS.NORTHERN_BARRACKS[barracks.level - 1].range : 0;
+
         let targetEnemy = newTargetId ? currentEnemies.find(e => e.id === newTargetId) : undefined;
         
-        const needsNewTarget = !targetEnemy || getDistance(soldier.position, targetEnemy.position) > SOLDIER_STATS.range || targetEnemy.health <= 0;
+        const needsNewTarget = !targetEnemy || 
+            getDistance(soldier.position, targetEnemy.position) > SOLDIER_STATS.range || 
+            targetEnemy.health <= 0 ||
+            (barracksScreenPos && getDistance(barracksScreenPos, targetEnemy.position) > barracksRange);
+
 
         if (needsNewTarget) {
             newTargetId = null;
-            const potentialTargets = currentEnemies.filter(e => e.health > 0 && getDistance(soldier.position, e.position) <= SOLDIER_STATS.range);
+            const potentialTargets = currentEnemies.filter(e => {
+                if (e.health <= 0 || getDistance(soldier.position, e.position) > SOLDIER_STATS.range) return false;
+                if (barracksScreenPos && getDistance(barracksScreenPos, e.position) > barracksRange) return false;
+                return true;
+            });
 
             if (potentialTargets.length > 0) {
                 const enemyTargetCounts = new Map<number, number>();
@@ -1004,10 +1069,13 @@ const App: React.FC = () => {
               }
               return false; 
           }
-          const direction = { x: targetPosition.x - proj.position.x, y: targetPosition.y - proj.position.y };
-          const normalizedDir = { x: direction.x / distanceToTarget, y: direction.y / distanceToTarget };
-          proj.position.x += normalizedDir.x * moveDistance;
-          proj.position.y += normalizedDir.y * moveDistance;
+          if (distanceToTarget > 0) {
+            const direction = { x: targetPosition.x - proj.position.x, y: targetPosition.y - proj.position.y };
+            const normalizedDir = { x: direction.x / distanceToTarget, y: direction.y / distanceToTarget };
+            proj.position.x += normalizedDir.x * moveDistance;
+            proj.position.y += normalizedDir.y * moveDistance;
+            proj.angle = Math.atan2(normalizedDir.y, normalizedDir.x) * (180 / Math.PI);
+          }
           return true;
       });
 
@@ -1103,8 +1171,10 @@ const App: React.FC = () => {
                      const heroBlocker = blocker as Hero;
                      damageDealt *= (1 - heroBlocker.armorValue);
                      heroBlocker.health = Math.max(0, heroBlocker.health - damageDealt);
+                     heroBlocker.timeSinceCombat = now;
                      if (heroBlocker.health <= 0) {
                         heroBlocker.animationState = 'die';
+                        heroBlocker.deathPosition = { ...heroBlocker.position };
                         const dieAnimDuration = 600;
                         setTimeout(() => {
                             setHero(h => ({...h, respawnTimer: HERO_STATS.respawnTime}))
@@ -1202,7 +1272,13 @@ const App: React.FC = () => {
 
       if (selectedUnit) {
         let updatedUnit: SelectableUnit | null = null;
-        if ('level' in selectedUnit) updatedUnit = currentTowers.find(t => t.id === selectedUnit.id) || null;
+        if ('level' in selectedUnit) {
+            updatedUnit = currentTowers.find(t => t.id === selectedUnit.id) || null;
+            if (updatedUnit && selectedUnit.type === 'NORTHERN_BARRACKS') {
+                const freshTower = towers.find(t => t.id === selectedUnit.id);
+                if (freshTower) updatedUnit.rallyPoint = freshTower.rallyPoint;
+            }
+        }
         else if ('barracksId' in selectedUnit) updatedUnit = currentSoldiers.find(s => s.id === selectedUnit.id) || null;
         else if ('pathIndex' in selectedUnit) updatedUnit = currentEnemies.find(e => e.id === selectedUnit.id) || null;
         else if (selectedUnit.id === currentHero.id) updatedUnit = currentHero;

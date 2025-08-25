@@ -92,9 +92,9 @@ export const TOWER_STATS: Record<TowerType, TowerLevelStats[]> = {
     { name: 'Ancient Weirwood', cost: 0, upgradeCost: 0, sellValue: 155, damage: 70, range: 160, fireRate: 1300, damageType: DamageType.MAGIC, projectileType: 'NATURE_BOLT', projectileSpeed: 320 },
   ],
   NORTHERN_BARRACKS: [
-    { name: 'Encampment', cost: 80, upgradeCost: 70, sellValue: 40, damage: 0, range: 0, fireRate: 0, damageType: DamageType.PHYSICAL },
-    { name: 'Barracks', cost: 0, upgradeCost: 90, sellValue: 75, damage: 0, range: 0, fireRate: 0, damageType: DamageType.PHYSICAL },
-    { name: 'Fortress', cost: 0, upgradeCost: 0, sellValue: 120, damage: 0, range: 0, fireRate: 0, damageType: DamageType.PHYSICAL },
+    { name: 'Encampment', cost: 80, upgradeCost: 70, sellValue: 40, damage: 0, range: 150, fireRate: 0, damageType: DamageType.PHYSICAL },
+    { name: 'Barracks', cost: 0, upgradeCost: 90, sellValue: 75, damage: 0, range: 180, fireRate: 0, damageType: DamageType.PHYSICAL },
+    { name: 'Fortress', cost: 0, upgradeCost: 0, sellValue: 120, damage: 0, range: 210, fireRate: 0, damageType: DamageType.PHYSICAL },
   ],
   SIEGE_WORKSHOP: [
     { name: 'Catapult', cost: 120, upgradeCost: 100, sellValue: 60, damage: 30, range: 220, fireRate: 3000, damageType: DamageType.PHYSICAL, projectileType: 'CATAPULT_ROCK', projectileSpeed: 150, splashRadius: 60 },
@@ -137,9 +137,9 @@ export const RAIN_OF_FIRE_STATS = {
 
 export const HERO_STATS = {
     name: 'Brienne of Tarth',
-    health: 120,
-    damage: 8,
-    attackRate: 1800,
+    health: 200,
+    damage: 25, // From 12. More damage per hit.
+    attackRate: 1000, // From 2200. Now attacks once per second.
     range: 50, // Melee range
     speed: 120,
     respawnTime: 40000,
@@ -153,6 +153,8 @@ export const HERO_STATS = {
     abilityRange: 150, // pixels for taunt
     abilityDuration: 4000, // ms
     abilityDefenseBonus: 0.50, // 50% armor increase
+    healthRegenRate: 2, // HP per second
+    healthRegenDelay: 3000, // ms after combat to start regen
 };
 
 interface EnemyStat {

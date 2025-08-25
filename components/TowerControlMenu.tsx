@@ -32,8 +32,11 @@ export const TowerControlMenu: React.FC<TowerControlMenuProps> = ({ tower, gold,
     const [confirmUpgrade, setConfirmUpgrade] = useState(false);
 
     useEffect(() => {
-        // Reset confirmation state when a new tower is selected
+        // Reset confirmation state when a new tower is selected or menu might be closing
         setConfirmUpgrade(false);
+        const reset = () => setConfirmUpgrade(false);
+        document.addEventListener('mousedown', reset);
+        return () => document.removeEventListener('mousedown', reset);
     }, [tower.id]);
 
     const screenPos = gameToScreen(tower.position);
@@ -48,7 +51,7 @@ export const TowerControlMenu: React.FC<TowerControlMenuProps> = ({ tower, gold,
 
     // Decide whether to place on the left or right based on available screen space
     const spaceOnRight = GAME_CONFIG.width - (screenPos.x + horizontalOffset + menuWidth);
-    const spaceOnLeft = screenPos.x - horizontalOffset - menuWidth;
+    const spaceOnLeft = screenPos.x - menuWidth - horizontalOffset;
 
     if (spaceOnRight >= 0 || spaceOnRight > spaceOnLeft) {
         // Place on the right
@@ -103,22 +106,27 @@ export const TowerControlMenu: React.FC<TowerControlMenuProps> = ({ tower, gold,
                    {towerStats.fireRate > 0 && <span>SPD: {`${towerStats.fireRate / 1000}s`}</span>}
                    {towerStats.damage === 0 && <span>DMG: N/A</span>}
                 </div>
-                <div className="flex gap-2 mt-2">
+                <div className="flex gap-4 mt-2">
                     {tower.level < 3 && (
                         <button 
                             onMouseDown={handleUpgradeClick}
                             disabled={gold < towerStats.upgradeCost}
-                            className="relative w-32 h-10 px-2 disabled:grayscale disabled:cursor-not-allowed transition-transform transform hover:scale-105"
+                            className="relative h-10 px-4 disabled:grayscale disabled:cursor-not-allowed transition-transform transform hover:scale-105"
                         >
                             <UIButton/>
-                            <div className="absolute inset-0 flex items-center justify-center gap-1 z-10 text-xs">
+                            <div className="absolute inset-0 flex items-center justify-center gap-2 z-10 text-xs">
                                 {confirmUpgrade ? (
                                     <span className="text-yellow-300">Confirm?</span>
                                 ) : (
                                     <>
                                         <UpgradeIcon className="w-5 h-5"/>
-                                        <span>{towerStats.upgradeCost}</span>
-                                        <CoinIcon className="w-4 h-4"/>
+                                        <div className="flex flex-col items-start leading-tight -space-y-1">
+                                            <span>Upgrade</span>
+                                            <div className="flex items-center gap-1">
+                                                <span>{towerStats.upgradeCost}</span>
+                                                <CoinIcon className="w-3 h-3"/>
+                                            </div>
+                                        </div>
                                     </>
                                 )}
                             </div>
@@ -129,10 +137,15 @@ export const TowerControlMenu: React.FC<TowerControlMenuProps> = ({ tower, gold,
                         className="relative flex-shrink-0 h-10 px-4 transition-transform transform hover:scale-105"
                     >
                         <UIButton/>
-                        <div className="absolute inset-0 flex items-center justify-center gap-1 z-10 text-xs">
-                            <SellIcon className="w-5 h-5"/>
-                            <span>{towerStats.sellValue}</span>
-                            <CoinIcon className="w-4 h-4"/>
+                        <div className="absolute inset-0 flex items-center justify-center gap-2 z-10 text-xs">
+                             <SellIcon className="w-5 h-5"/>
+                             <div className="flex flex-col items-start leading-tight -space-y-1">
+                                <span>Sell</span>
+                                <div className="flex items-center gap-1">
+                                    <span>{towerStats.sellValue}</span>
+                                    <CoinIcon className="w-3 h-3"/>
+                                </div>
+                            </div>
                         </div>
                     </button>
                 </div>

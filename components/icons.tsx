@@ -80,7 +80,19 @@ export const PauseIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => ( <
 export const UpgradeIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12 8l-6 6h12l-6-6zm-6 8h12v-2H6v2z"/></svg>);
 export const SellIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg {...props} viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12.5 6.9c1.78 0 2.5.7 2.5 2.1H17c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16C8.85 5.58 7.3 6.84 7.3 8.77c0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c2.14-.46 3.5-1.63 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85z"/>
+        <text
+            x="50%"
+            y="50%"
+            dominantBaseline="middle"
+            textAnchor="middle"
+            fontSize="22"
+            fontWeight="bold"
+            fontFamily="'Press Start 2P', cursive"
+            fill="currentColor"
+            dy=".1em"
+        >
+            $
+        </text>
     </svg>
 );
 export const ReinforcementsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V18h14v-1.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V18h6v-1.5c0-2.33-4.67-3.5-7-3.5z"/></svg>);
@@ -292,6 +304,7 @@ export const NorthernBarracksIcon: React.FC<TowerProps> = ({level, spawnCounter,
             <defs>
                  <linearGradient id="wood-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#a1887f"/><stop offset="100%" stopColor="#5d4037"/></linearGradient>
                  <linearGradient id="wood-roof" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#795548"/><stop offset="100%" stopColor="#4e342e"/></linearGradient>
+                 <linearGradient id="stone-grad-1" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#616161"/><stop offset="50%" stopColor="#9e9e9e"/><stop offset="100%" stopColor="#757575"/></linearGradient>
             </defs>
             <style>{`
                 @keyframes open-close-door-once {
@@ -304,20 +317,40 @@ export const NorthernBarracksIcon: React.FC<TowerProps> = ({level, spawnCounter,
                 }
             `}</style>
             <g>
-                <path d="M0 28 L40 28 L40 32 L0 32 Z" fill="#9e9e9e" />
+                {/* Base Ground */}
+                <path d="M0 28 L40 28 L40 32 L0 32 Z" fill="#78909c" />
+                {/* Level 3 additions */}
+                {level > 2 && <>
+                    <path d="M0 30 L40 30 L38 24 L2 24 Z" fill="url(#stone-grad-1)" />
+                    <rect x="36" y="0" width="2" height="16" fill="#5d4037"/>
+                    <path d="M38 2 L 30 5 L 38 8 Z" fill="#eceff1" stroke="#455a64" strokeWidth="0.5"/>
+                    <path d="M34 4 L33 5 L35 5 Z" fill="#455a64" />
+                </>}
+
+                {/* Main Building */}
                 <path d="M2 14 L38 14 L38 28 L2 28 Z" fill="url(#wood-wall)" />
                 <path d="M0 14 L20 2 L40 14 Z" fill="url(#wood-roof)" />
+                
+                {/* Level 2 additions */}
+                {level > 1 && <>
+                    <rect x="5" y="6" width="30" height="8" fill="url(#wood-wall)" stroke="#4e342e" strokeWidth="1" />
+                    <rect x="7" y="8" width="8" height="4" fill="#212121" />
+                    <rect x="25" y="8" width="8" height="4" fill="#212121" />
+                </>}
+
+                {/* Level 1 Sigil */}
+                {level === 1 && <>
+                    <circle cx="20" cy="21" r="5" fill="#cfd8dc" stroke="#455a64" strokeWidth="0.5"/>
+                    <path d="M18 19 L 20 18 L 22 19 L 20 21 M 19 22 L 21 22 L 20 24 Z" fill="#455a64" />
+                </>}
                 
                 {/* Doorway */}
                 <path d="M17 20 v8 h6 v-8 Z" fill="#212121" />
                 {/* Animated Door with original details */}
                 <g className={`door ${animateDoor ? 'animate' : ''}`}>
                     <path d="M17 20 v8 h6 v-8 Z" fill="#4e342e" />
-                    <path d="M 18 21 h4 v2 h-4 Z" fill="#3e2723" />
+                    <rect x="21" y="23" width="1" height="2" fill="#3e2723" />
                 </g>
-
-                {level > 1 && <path d="M28 16 L34 16 L34 22 L28 22 Z" stroke="#f5f5f5" strokeWidth="1" fill="none" />}
-                {level > 2 && <path d="M4 16 L10 16 L10 22 L4 22 Z" stroke="#f5f5f5" strokeWidth="1" fill="none" />}
             </g>
         </svg>
     );
@@ -530,88 +563,28 @@ export const BrienneIcon: React.FC<{ animationState: GroundUnitAnimationState, d
             70% { transform: rotate(80deg); } /* swing */
             100% { transform: rotate(10deg); } /* follow-through */
         }
-        
-        /* Mirror attack animation for left direction */
-        .attack .left-arm { animation: sword-swing-left 0.4s ease-in-out; }
-        @keyframes sword-swing-left { 
-            0% { transform: rotate(-10deg); }
-            30% { transform: rotate(20deg); } /* anticipation */
-            70% { transform: rotate(-80deg); } /* swing */
-            100% { transform: rotate(-10deg); } /* follow-through */
-        }
 
         .hero-group { transition: transform 0.6s, opacity 0.6s; transform-origin: bottom center; }
         .die .hero-group { transform: rotate(80deg) translateY(20px); opacity: 0; }
-        .die.left .hero-group { transform: rotate(-80deg) translateY(20px); opacity: 0; }
     `;
-
-    const defs = (
-        <defs>
-            <linearGradient id="hero-armor-light" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#e0e0e0"/><stop offset="50%" stopColor="#ffffff"/><stop offset="100%" stopColor="#e0e0e0"/></linearGradient>
-            <linearGradient id="hero-armor-dark" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#bdbdbd"/><stop offset="50%" stopColor="#f5f5f5"/><stop offset="100%" stopColor="#bdbdbd"/></linearGradient>
-            <linearGradient id="hero-leg-dark" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#9e9e9e"/><stop offset="100%" stopColor="#546e7a"/></linearGradient>
-            <linearGradient id="hero-leg-light" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#bdbdbd"/><stop offset="100%" stopColor="#78909c"/></linearGradient>
-            <linearGradient id="hero-skin" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#f5c29c"/><stop offset="50%" stopColor="#fcd3b2"/><stop offset="100%" stopColor="#f5c29c"/></linearGradient>
-            <linearGradient id="hero-hair" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#fff59d"/><stop offset="100%" stopColor="#fbc02d"/></linearGradient>
-            <linearGradient id="hero-tunic" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#546e7a"/><stop offset="100%" stopColor="#263238"/></linearGradient>
-            <linearGradient id="sword-blade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f5f5f5"/><stop offset="100%" stopColor="#bdbdbd"/></linearGradient>
-        </defs>
-    );
-
-    if (direction === 'left') {
-        return (
-            <svg width="60" height="72" viewBox="0 0 30 36">
-                {defs}<style>{css}</style>
-                <g className={`${animationState} left`}>
-                    <g className="hero-group">
-                        {/* Legs Mirrored */}
-                        <g className="leg right-leg" style={{transformOrigin: '18px 23px'}}><path d="M19 35 L 16 35 L 16 27 L 19 25 Z" fill="url(#hero-leg-dark)" /><rect x="16" y="34" width="3" height="2" fill="#424242" /></g>
-                        <g className="leg left-leg" style={{transformOrigin: '13px 23px'}}><path d="M14 35 L 11 35 L 11 25 L 14 27 Z" fill="url(#hero-leg-light)" /><rect x="11" y="34" width="3" height="2" fill="#616161" /></g>
-                        
-                        <g className="body" style={{transformOrigin: '15px 34px'}}>
-                            {/* Sword Arm Mirrored (now right-arm visually) */}
-                            <g className="arm right-arm" style={{transformOrigin: '22px 17px'}}>
-                               <path d="M22 16 L 27 18 L 28 24 L 23 25 Z" fill="url(#hero-armor-dark)"/>
-                               {/* Shield */}
-                               <path d="M28 18 C 32 20, 32 30, 28 32 L 22 32 C 18 30, 18 20, 22 18 Z" fill="url(#hero-armor-dark)" stroke="#424242" strokeWidth="1"/>
-                               {/* Direwolf sigil */}
-                               <path d="M25 22 L 25 25 L 26 26 L 24 26 L 25 25 L 24 25 L 25 28 L 23 28 L 24 25 M23 23 L 24 22" stroke="#fafafa" strokeWidth="0.5" fill="none" />
-                            </g>
-
-                            {/* Tunic & Torso Mirrored */}
-                            <path d="M20 26 L 10 26 L 8 15 L 22 15 Z" fill="url(#hero-tunic)" />
-                            <path d="M20 24 L 10 24 L 9 16 L 21 16 Z" fill="url(#hero-armor-dark)" />
-                            <path d="M18 18 L 12 18 L 11 16 L 19 16 Z" fill="url(#hero-armor-light)" />
-
-                            {/* Head and Hair Mirrored */}
-                            <path d="M18 15 L 12 15 L 13 9 L 17 9 Z" fill="url(#hero-skin)"/>
-                            <path d="M18 9 L 12 9 Q 12 4, 15 4 Q 18 4, 18 9 Z" fill="url(#hero-hair)" />
-                            <path d="M20 8 L 10 8 L 12 6 L 18 6 Z" fill="url(#hero-armor-light)" />
-                            
-                            {/* Shield Arm Mirrored (now left-arm visually) */}
-                            <g className="arm left-arm" style={{transformOrigin: '12px 17px'}}>
-                                <path d="M12 16 L 7 18 L 6 24 L 11 24 Z" fill="url(#hero-armor-dark)" />
-                                {/* Sword */}
-                                <g transform="rotate(-15 5 19)">
-                                    <rect x="7" y="0" width="2" height="22" fill="url(#sword-blade)"/>
-                                    <rect x="5" y="20" width="6" height="2" fill="#795548"/>
-                                    <rect x="7" y="22" width="2" height="2" fill="#a1887f"/>
-                                </g>
-                            </g>
-                            {/* Pauldrons Mirrored */}
-                            <ellipse cx="21" cy="16" rx="4" ry="3" fill="url(#hero-armor-light)"/>
-                            <ellipse cx="9" cy="16" rx="4" ry="3" fill="url(#hero-armor-light)"/>
-                        </g>
-                    </g>
-                </g>
-            </svg>
-        );
-    }
 
     return (
         <svg width="60" height="72" viewBox="0 0 30 36">
-            {defs}<style>{css}</style>
-            <g className={animationState}>
+            <defs>
+                <linearGradient id="hero-armor-light" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#e0e0e0"/><stop offset="50%" stopColor="#ffffff"/><stop offset="100%" stopColor="#e0e0e0"/></linearGradient>
+                <linearGradient id="hero-armor-dark" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#bdbdbd"/><stop offset="50%" stopColor="#f5f5f5"/><stop offset="100%" stopColor="#bdbdbd"/></linearGradient>
+                <linearGradient id="hero-leg-dark" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#9e9e9e"/><stop offset="100%" stopColor="#546e7a"/></linearGradient>
+                <linearGradient id="hero-leg-light" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#bdbdbd"/><stop offset="100%" stopColor="#78909c"/></linearGradient>
+                <linearGradient id="hero-skin" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#f5c29c"/><stop offset="50%" stopColor="#fcd3b2"/><stop offset="100%" stopColor="#f5c29c"/></linearGradient>
+                <linearGradient id="hero-hair" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#fff59d"/><stop offset="100%" stopColor="#fbc02d"/></linearGradient>
+                <linearGradient id="hero-tunic" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#546e7a"/><stop offset="100%" stopColor="#263238"/></linearGradient>
+                <linearGradient id="sword-blade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f5f5f5"/><stop offset="100%" stopColor="#bdbdbd"/></linearGradient>
+            </defs>
+            <style>{css}</style>
+            <g 
+                className={animationState}
+                transform={direction === 'left' ? 'scale(-1, 1) translate(-30, 0)' : ''}
+            >
                 <g className="hero-group">
                     {/* Legs */}
                     <g className="leg left-leg" style={{transformOrigin: '12px 23px'}}><path d="M11 35 L 14 35 L 14 27 L 11 25 Z" fill="url(#hero-leg-dark)" /><rect x="11" y="34" width="3" height="2" fill="#424242" /></g>
@@ -787,7 +760,12 @@ export const EnemyIcon: React.FC<{type: EnemyType, animationState: EnemyAnimatio
 // Projectiles
 // ===================================================================================
 export const IceArrowProjectileIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg {...props} width="24" height="8" viewBox="0 0 24 8" style={{filter: 'drop-shadow(0 0 2px #81d4fa)'}}><path d="M0 3 H 20 L 24 4 L 20 5 H 0 Z" fill="#e1f5fe" /><path d="M0 3 H 10" stroke="#81d4fa" strokeWidth="1" fill="none"/></svg>
+    <svg {...props} width="32" height="10" viewBox="0 0 32 10" style={{filter: 'drop-shadow(0 0 2px #81d4fa)'}}>
+        <path d="M0 4 H 26 V 6 H 0 Z" fill="#a1887f" />
+        <path d="M0 2 L 6 2 L 3 4 L 0 4 Z" fill="#eceff1" />
+        <path d="M0 8 L 6 8 L 3 6 L 0 6 Z" fill="#cfd8dc" />
+        <path d="M24 0 L 32 5 L 24 10 Z" fill="#b3e5fc" stroke="#4dd0e1" strokeWidth="0.5" />
+    </svg>
 );
 export const NatureBoltProjectileIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg {...props} width="16" height="16" viewBox="0 0 16 16" style={{filter: 'drop-shadow(0 0 2px #4caf50)'}}><circle cx="8" cy="8" r="8" fill="#a5d6a7"><animate attributeName="r" values="8;6;8" dur="0.5s" repeatCount="indefinite" /></circle><circle cx="8" cy="8" r="4" fill="#4caf50" /></svg>

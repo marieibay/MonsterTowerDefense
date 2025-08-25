@@ -1,7 +1,7 @@
 
 
 import React from 'react';
-import { TOWER_SPOTS, GAME_CONFIG, MAP_PATH, HERO_STATS, REINFORCEMENTS_STATS, HERO_START_GRID_POS, ENVIRONMENT_DECORATIONS } from '../constants';
+import { TOWER_SPOTS, GAME_CONFIG, MAP_PATH, HERO_STATS, REINFORCEMENTS_STATS, HERO_START_GRID_POS, ENVIRONMENT_DECORATIONS, TOWER_STATS } from '../constants';
 import type { Tower, Enemy, Vector2D, Projectile, Soldier, Hero, SelectableUnit, Reinforcement, Explosion, PlayerSpell, GoldParticle, RallyPointDragState, EnvironmentDecoration } from '../types';
 import { gameToScreen } from '../utils';
 import { 
@@ -19,6 +19,7 @@ import {
     GameBackground,
     SelectionCircle,
     RallyPointFlag,
+    RallyPointRangeCircle,
     ReinforcementSoldierIcon,
     Explosion as ExplosionIcon,
     TargetCursor,
@@ -188,9 +189,9 @@ const ReinforcementComponent: React.FC<{ reinforcement: Reinforcement }> = React
 const HeroComponent: React.FC<{ hero: Hero, onSelect: (h: Hero) => void }> = React.memo(({ hero, onSelect }) => {
     if (hero.respawnTimer > 0) {
         const respawnProgress = 1 - (hero.respawnTimer / HERO_STATS.respawnTime);
-        const screenPos = gameToScreen(HERO_START_GRID_POS);
+        const respawnPosition = hero.deathPosition || gameToScreen(HERO_START_GRID_POS);
         return (
-            <div className="absolute transform -translate-x-1/2 -translate-y-1/2" style={{ left: screenPos.x, top: screenPos.y, zIndex: 10000 }}>
+            <div className="absolute transform -translate-x-1/2 -translate-y-1/2" style={{ left: respawnPosition.x, top: respawnPosition.y, zIndex: 10000 }}>
                 <div className="w-16 h-16 bg-black/70 rounded-full flex items-center justify-center border-2 border-yellow-400">
                     <svg className="w-14 h-14" viewBox="0 0 100 100">
                         <path d="M50 10 A 40 40 0 0 1 50 90 A 40 40 0 0 1 50 10" fill="none" stroke="#888" strokeWidth="12"/>
@@ -239,7 +240,7 @@ const ProjectileComponent: React.FC<{ projectile: Projectile }> = ({ projectile 
             zIndex: 10000, 
           }}
         >
-          <ProjectileIcon className="w-10 h-10"/>
+          <ProjectileIcon className="w-10 h-10" style={{ transform: `rotate(${projectile.angle || 0}deg)` }}/>
         </div>
     )
 }
@@ -316,6 +317,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const selectionPosition = selectedUnit ? ('level' in selectedUnit ? gameToScreen(selectedUnit.position) : selectedUnit.position) : null;
   const showExitWarning = enemies.some(e => e.pathIndex >= MAP_PATH.length - 4);
 
+  const selectedBarracks = selectedUnit && 'level' in selectedUnit && selectedUnit.type === 'NORTHERN_BARRACKS' ? selectedUnit : null;
+  const isHeroSelected = selectedUnit && 'abilityCooldown' in selectedUnit;
+
   return (
     <div 
         className={`w-full h-full relative overflow-hidden ${activeSpell ? 'cursor-pointer' : ''}`}
@@ -348,6 +352,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       {selectionPosition && <SelectionCircle position={selectionPosition} />}
       {rallyPointDrag && <PathPreviewLine start={rallyPointDrag.startPosition} end={rallyPointDrag.currentPosition} />}
       {showExitWarning && <ExitWarning />}
+
+      {isHeroSelected && <RallyPointFlag position={hero.rallyPoint} />}
+      {selectedBarracks && selectedBarracks.rallyPoint && <RallyPointFlag position={selectedBarracks.rallyPoint} />}
+      {selectedBarracks && <RallyPointRangeCircle position={gameToScreen(selectedBarracks.position)} range={TOWER_STATS.NORTHERN_BARRACKS[selectedBarracks.level-1].range} />}
 
       {towers.map(tower => <TowerComponent key={`tower-${tower.id}`} tower={tower} onSelect={onSelectUnit} />)}
       {soldiers.map(soldier => <SoldierComponent key={`soldier-${soldier.id}`} soldier={soldier} onSelect={onSelectUnit} />)}

@@ -1,4 +1,5 @@
 
+
 export interface Vector2D {
   x: number;
   y: number;
@@ -29,6 +30,7 @@ export interface Tower {
   isAttacking?: boolean;
   damageType: DamageType;
   spawnCounter?: number;
+  rallyPoint?: Vector2D; // Screen position for barracks
 }
 
 export type EnemyAnimationState = 'walk' | 'idle' | 'attack';
@@ -62,6 +64,7 @@ export interface Projectile {
     speed: number;
     splashRadius?: number;
     slows?: { factor: number; duration: number };
+    angle?: number;
 }
 
 export type GroundUnitAnimationState = 'idle' | 'walk' | 'attack' | 'die';
@@ -107,6 +110,8 @@ export interface Hero {
     direction: 'left' | 'right';
     patrolTarget?: Vector2D;
     idleTimer?: number;
+    timeSinceCombat?: number;
+    deathPosition?: Vector2D;
 }
 
 export interface Reinforcement {
