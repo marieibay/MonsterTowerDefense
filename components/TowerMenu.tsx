@@ -1,7 +1,6 @@
-
 import React from 'react';
 import type { Vector2D, TowerType, Tower } from '../types';
-import { TOWER_STATS } from '../constants';
+import { TOWER_STATS, GAME_CONFIG } from '../constants';
 import { gameToScreen } from '../utils';
 import { 
     WinterfellWatchtowerIcon,
@@ -99,11 +98,20 @@ export const TowerControlMenu: React.FC<TowerControlMenuProps> = ({ tower, gold,
     const towerStats = TOWER_STATS[tower.type][tower.level - 1];
     const screenPos = gameToScreen(tower.position);
     
+    const isRightSide = screenPos.x > GAME_CONFIG.width / 2;
+    // Determine if the tower is in the bottom half of the screen, to push the menu away from the center path.
+    const isBottomHalf = screenPos.y > GAME_CONFIG.height / 2;
+    const hOffset = 80; // Horizontal distance from tower center
+    const vPush = 60;   // Vertical push amount to avoid the path
+
     const menuStyle: React.CSSProperties = {
         position: 'absolute',
-        left: screenPos.x,
-        top: screenPos.y - 120, 
-        transform: 'translateX(-50%)',
+        // Position horizontally on the side of the tower with more screen space.
+        left: isRightSide ? screenPos.x - hOffset : screenPos.x + hOffset,
+        // Position vertically away from the center of the screen to avoid the path.
+        top: isBottomHalf ? screenPos.y + vPush : screenPos.y - vPush,
+        // Align the menu correctly based on its position and vertically center it on the new 'top' coordinate.
+        transform: `translate(${isRightSide ? '-100%' : '0%'}, -50%)`,
         zIndex: 51,
         pointerEvents: 'auto',
     };
