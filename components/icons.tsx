@@ -87,32 +87,77 @@ export const GameBackground: React.FC<React.SVGProps<HTMLDivElement>> = (props) 
     const pathPoints = MAP_PATH.map(p => gameToScreen(p));
     const pathString = "M" + pathPoints.map(p => `${p.x},${p.y}`).join(" L");
 
+    const forestElements = [
+        // Top border
+        { type: '#tree1', x: 80, y: 150, scale: 2 }, { type: '#tree2', x: 200, y: 100, scale: 2.2 },
+        { type: '#bush1', x: 300, y: 160, scale: 1.5 }, { type: '#tree1', x: 450, y: 120, scale: 2.3 },
+        { type: '#tree2', x: 600, y: 180, scale: 2 }, { type: '#bush1', x: 700, y: 220, scale: 1.8 },
+        { type: '#tree1', x: 850, y: 140, scale: 2.5 }, { type: '#tree2', x: 1050, y: 100, scale: 2.1 },
+        { type: '#bush1', x: 1150, y: 170, scale: 1.6 }, { type: '#tree1', x: 1300, y: 130, scale: 2.4 },
+        { type: '#tree2', x: 1450, y: 190, scale: 2 }, { type: '#bush1', x: 1550, y: 230, scale: 1.7 },
+        { type: '#tree1', x: 1700, y: 110, scale: 2.6 }, { type: '#tree2', x: 1850, y: 150, scale: 2.2 },
+
+        // Left border
+        { type: '#tree2', x: 60, y: 300, scale: 2 }, { type: '#bush1', x: 80, y: 450, scale: 1.5 },
+        { type: '#tree1', x: 70, y: 600, scale: 2.1 }, { type: '#tree2', x: 90, y: 750, scale: 2.3 },
+        { type: '#bush1', x: 150, y: 820, scale: 1.8 },
+
+        // Right border
+        { type: '#tree1', x: 1850, y: 350, scale: 2.2 }, { type: '#bush1', x: 1820, y: 500, scale: 1.7 },
+        { type: '#tree2', x: 1840, y: 650, scale: 2.4 }, { type: '#tree1', x: 1860, y: 800, scale: 2.1 },
+        { type: '#bush1', x: 1780, y: 850, scale: 1.9 },
+
+        // Bottom border
+        { type: '#tree1', x: 400, y: 860, scale: 2 }, { type: '#bush1', x: 550, y: 840, scale: 1.6 },
+        { type: '#tree2', x: 700, y: 870, scale: 2.2 }, { type: '#tree1', x: 900, y: 830, scale: 2.4 },
+        { type: '#bush1', x: 1050, y: 850, scale: 1.7 }, { type: '#tree2', x: 1200, y: 880, scale: 2.1 },
+        { type: '#tree1', x: 1400, y: 840, scale: 2.3 }, { type: '#bush1', x: 1550, y: 860, scale: 1.5 },
+        { type: '#tree2', x: 1700, y: 870, scale: 2.5 },
+    ];
+
     return (
         <div {...props}>
-             <svg width={GAME_CONFIG.width} height={GAME_CONFIG.height} className="absolute inset-0">
+            <svg width={GAME_CONFIG.width} height={GAME_CONFIG.height} className="absolute inset-0">
                 <defs>
-                    <filter id="noise">
-                        <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/>
+                    <filter id="ground-texture" x="0" y="0" width="100%" height="100%">
+                        <feTurbulence type="fractalNoise" baseFrequency="0.02 0.05" numOctaves="3" seed="2" stitchTiles="stitch" result="noise"/>
+                        <feColorMatrix in="noise" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.35 0" result="alphanoise"/>
+                        <feComponentTransfer in="alphanoise" result="colorednoise">
+                            <feFuncR type="linear" slope="0.1" intercept="0.2" />
+                            <feFuncG type="linear" slope="0.2" intercept="0.3" />
+                            <feFuncB type="linear" slope="0.1" intercept="0.15" />
+                        </feComponentTransfer>
+                        <feBlend in="SourceGraphic" in2="colorednoise" mode="multiply" />
                     </filter>
-                    <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style={{stopColor: '#607d8b', stopOpacity: 1}} />
-                        <stop offset="50%" style={{stopColor: '#90a4ae', stopOpacity: 1}} />
-                    </linearGradient>
+                    
+                    <g id="tree1">
+                        <path d="M-5 15 L 5 15 L 5 25 L -5 25 Z" fill="#6d4c41"/>
+                        <circle cx="0" cy="0" r="15" fill="#388e3c"/>
+                        <circle cx="-10" cy="5" r="12" fill="#43a047"/>
+                        <circle cx="10" cy="5" r="12" fill="#43a047"/>
+                    </g>
+                    <g id="tree2">
+                        <path d="M-4 12 L 4 12 L 4 22 L -4 22 Z" fill="#5d4037"/>
+                        <path d="M0 -5 C -20 10, -15 20, 0 15 C 15 20, 20 10, 0 -5 Z" fill="#2e7d32"/>
+                    </g>
+                     <g id="bush1">
+                        <circle cx="0" cy="0" r="10" fill="#4caf50" />
+                        <circle cx="-8" cy="2" r="8" fill="#66bb6a" />
+                        <circle cx="8" cy="2" r="8" fill="#66bb6a" />
+                    </g>
                 </defs>
-                <rect width="100%" height="100%" fill="url(#skyGradient)" />
-                <rect y="440" width="100%" height="100%" fill="#616161" />
-                <rect y="440" width="100%" height="100%" fill="url(#noise)" opacity="0.05" />
 
-                <path d="M 0 440 C 300 480, 600 420, 900 450 S 1500 500, 1920 460 V 880 H 0 Z" fill="#eeeeee" />
-                <path d="M 0 440 C 300 480, 600 420, 900 450 S 1500 500, 1920 460 V 880 H 0 Z" fill="url(#noise)" opacity="0.1" />
-
-                <path d="M -100 440 L 200 250 L 500 440 Z" fill="#90a4ae"/>
-                <path d="M 100 440 L 250 200 L 400 440 Z" fill="#cfd8dc"/>
-                <path d="M 1300 440 L 1600 150 L 1900 440 Z" fill="#90a4ae"/>
-                <path d="M 1500 440 L 1750 250 L 2000 440 Z" fill="#cfd8dc"/>
+                <rect width="100%" height="100%" fill="#4caf50" />
+                <rect width="100%" height="100%" filter="url(#ground-texture)" />
                 
-                <path d={pathString} fill="none" stroke="#a1887f" strokeWidth="70" strokeLinejoin="round" strokeLinecap="round" />
-                <path d={pathString} fill="none" stroke="#8d6e63" strokeWidth="60" strokeLinejoin="round" strokeLinecap="round" />
+                <g id="forest-layer">
+                    {forestElements.map((el, i) => (
+                        <use key={i} href={el.type} transform={`translate(${el.x}, ${el.y}) scale(${el.scale})`} />
+                    ))}
+                </g>
+
+                <path d={pathString} fill="none" stroke="#a1887f" strokeWidth="70" strokeLinejoin="round" strokeLinecap="round" opacity="0.6"/>
+                <path d={pathString} fill="none" stroke="#8d6e63" strokeWidth="60" strokeLinejoin="round" strokeLinecap="round" opacity="0.8"/>
             </svg>
         </div>
     )

@@ -1,8 +1,9 @@
 
+
 import React, { useState, useEffect, useCallback, useRef, useMemo, useLayoutEffect } from 'react';
 import { GameBoard } from './components/GameBoard';
 import { HUD } from './components/HUD';
-import { TowerMenu } from './components/TowerMenu';
+import { TowerMenu, TowerControlMenu } from './components/TowerMenu';
 import { Modal } from './components/Modal';
 import { 
   TOWER_STATS, 
@@ -303,7 +304,21 @@ const App: React.FC = () => {
       }
       return t;
     }));
-  }, [stats.gold, audioManager]);
+    // After upgrading, we might want to keep the tower selected to show new stats
+    setSelectedUnit(prev => {
+        if (prev && 'level' in prev && prev.id === towerId) {
+            const updatedTower = towers.find(t => t.id === towerId);
+            if(updatedTower) {
+                const currentStats = TOWER_STATS[updatedTower.type][updatedTower.level - 1];
+                 if (updatedTower.level < 3 && stats.gold >= currentStats.upgradeCost) {
+                    return {...updatedTower, level: updatedTower.level + 1};
+                }
+                return updatedTower;
+            }
+        }
+        return prev;
+    });
+  }, [stats.gold, audioManager, towers]);
 
   const handleSellTower = useCallback((towerId: number) => {
     audioManager.playSound('uiClick');
@@ -465,9 +480,9 @@ const App: React.FC = () => {
      if (typeof unitId === 'number' && unitId === hero.id) {
          setHero(h => h.id === unitId ? { ...h, animationState: 'attack' } : h);
      } else if (reinforcements.some(r => r.id === unitId)) {
-         setReinforcements(prev => prev.map(u => u.id === unitId ? { ...u, animationState: 'attack' } : u));
+         setReinforcements(prev => prev.map((u): Reinforcement => u.id === unitId ? { ...u, animationState: 'attack' } : u));
      } else {
-         setSoldiers(prev => prev.map(u => u.id === unitId ? { ...u, animationState: 'attack' } : u));
+         setSoldiers(prev => prev.map((u): Soldier => u.id === unitId ? { ...u, animationState: 'attack' } : u));
      }
 
      const newTimer = setTimeout(() => {
@@ -475,9 +490,9 @@ const App: React.FC = () => {
          if (typeof unitId === 'number' && unitId === hero.id) {
             setHero(h => h.id === unitId ? { ...h, animationState: 'idle' } : h);
          } else if (reinforcements.some(r => r.id === unitId)) {
-            setReinforcements(prev => prev.map(u => u.id === unitId ? { ...u, animationState: 'idle' } : u));
+            setReinforcements(prev => prev.map((u): Reinforcement => u.id === unitId ? { ...u, animationState: 'idle' } : u));
          } else {
-            setSoldiers(prev => prev.map(u => u.id === unitId ? { ...u, animationState: 'idle' } : u));
+            setSoldiers(prev => prev.map((u): Soldier => u.id === unitId ? { ...u, animationState: 'idle' } : u));
          }
 
          animationTimers.current.delete(timerKey);
@@ -858,7 +873,7 @@ const App: React.FC = () => {
         return { ...soldier, attackCooldown: newAttackCooldown, targetId: newTargetId, animationState: newAnimationState, direction: newDirection, patrolTarget: newPatrolTarget, idleTimer: newIdleTimer };
     });
 
-      currentReinforcements = currentReinforcements.map(r => {
+      currentReinforcements = currentReinforcements.map((r): Reinforcement => {
         if (r.health <= 0) return { ...r, animationState: 'die' };
         if (r.animationState === 'die') return r;
 
@@ -1205,6 +1220,15 @@ const App: React.FC = () => {
             onBuild={handleBuildTower}
             onClose={() => setSelectedSpot(null)}
             gold={stats.gold}
+          />
+        )}
+        {selectedUnit && 'level' in selectedUnit && (
+          <TowerControlMenu
+            tower={selectedUnit}
+            gold={stats.gold}
+            onUpgrade={handleUpgradeTower}
+            onSell={handleSellTower}
+            onClose={deselectAll}
           />
         )}
          <HUD 

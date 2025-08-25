@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { GameStatus, SelectableUnit, Tower, Enemy, Soldier, Hero, PlayerSpell } from '../types';
 import { 
@@ -284,7 +285,7 @@ export const HUD: React.FC<HUDProps> = ({
         
         {/* Bottom Right: Contextual Panel */}
         <div className="flex flex-col items-center">
-            {selectedUnit ? (
+            {selectedUnit && !('level' in selectedUnit) ? (
             <SelectionDetails unit={selectedUnit} onUpgrade={onUpgradeTower} onSell={onSellTower} gold={gold}/>
             ) : (
             <>
