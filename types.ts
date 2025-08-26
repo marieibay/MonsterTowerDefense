@@ -112,6 +112,7 @@ export interface Hero {
     idleTimer?: number;
     timeSinceCombat?: number;
     deathPosition?: Vector2D;
+    deathAnimTimer?: number;
 }
 
 export interface Reinforcement {

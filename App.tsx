@@ -664,7 +664,15 @@ const App: React.FC = () => {
       currentHero.armorValue = Math.min(0.9, currentArmorValue);
 
       if (currentHero.animationState === 'die') {
-        // Hero is in death animation, do nothing else
+        if (currentHero.deathAnimTimer && currentHero.deathAnimTimer > 0) {
+            const newTimer = currentHero.deathAnimTimer - msPerFrame;
+            if (newTimer <= 0) {
+                currentHero.respawnTimer = HERO_STATS.respawnTime;
+                currentHero.deathAnimTimer = undefined;
+            } else {
+                currentHero.deathAnimTimer = newTimer;
+            }
+        }
       }
       else if (currentHero.respawnTimer > 0) {
         currentHero.respawnTimer = Math.max(0, currentHero.respawnTimer - msPerFrame);
@@ -1173,13 +1181,12 @@ const App: React.FC = () => {
                      heroBlocker.health = Math.max(0, heroBlocker.health - damageDealt);
                      heroBlocker.timeSinceCombat = now;
                      if (heroBlocker.health <= 0) {
-                        heroBlocker.animationState = 'die';
-                        heroBlocker.deathPosition = { ...heroBlocker.position };
-                        const dieAnimDuration = 600;
-                        setTimeout(() => {
-                            setHero(h => ({...h, respawnTimer: HERO_STATS.respawnTime}))
-                        }, dieAnimDuration);
-                        audioManager.playSound('enemyDeath'); // a hero death sound
+                        if (heroBlocker.animationState !== 'die') {
+                            heroBlocker.animationState = 'die';
+                            heroBlocker.deathPosition = { ...heroBlocker.position };
+                            heroBlocker.deathAnimTimer = 600;
+                            audioManager.playSound('enemyDeath'); // a hero death sound
+                        }
                      }
                 } else if (blockerType === 'soldier') {
                     const soldierIndex = currentSoldiers.findIndex(s => s.id === blocker!.id);
