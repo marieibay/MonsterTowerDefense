@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { Vector2D, TowerType } from '../types';
 import { TOWER_STATS } from '../constants';
@@ -8,7 +7,6 @@ import {
     NorthernBarracksIcon,
     SiegeWorkshopIcon,
     CoinIcon, 
-    UIPanel,
 } from './icons';
 
 interface TowerMenuProps {
@@ -58,6 +56,7 @@ export const TowerMenu: React.FC<TowerMenuProps> = ({ position, onBuild, onClose
                         }}
                         disabled={!canAfford}
                         className={`absolute flex flex-col items-center justify-center p-2 text-white transition-transform transform hover:scale-110
+                        bg-gray-800/90 border border-gray-600 rounded-lg shadow-lg
                         ${canAfford ? 'cursor-pointer' : 'cursor-not-allowed grayscale'}`}
                         style={{
                             width: buttonSize,
@@ -65,12 +64,11 @@ export const TowerMenu: React.FC<TowerMenuProps> = ({ position, onBuild, onClose
                             transform: `translate(-50%, -50%) translate(${x}px, ${y}px)`,
                         }}
                     >
-                        <UIPanel className="absolute inset-0 w-full h-full" />
                         <div className="relative z-10 flex flex-col items-center justify-center w-full h-full text-center">
                             <div className="w-10 h-10 flex items-center justify-center">
                                 <Icon level={1}/>
                             </div>
-                            <div className={`flex items-center text-sm mt-1 ${canAfford ? 'text-yellow-400' : 'text-gray-500'}`} style={{textShadow: '1px 1px #000'}}>
+                            <div className={`flex items-center text-sm mt-1 ${canAfford ? 'text-yellow-400' : 'text-gray-500'}`}>
                                 <CoinIcon className="w-4 h-4 mr-1" />
                                 {stats.cost}
                             </div>

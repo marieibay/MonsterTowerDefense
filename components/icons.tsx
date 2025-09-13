@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useRef } from 'react';
 import type { Vector2D, PlayerSpell, EnemyType, EnemyAnimationState, GroundUnitAnimationState } from '../types';
 import { RAIN_OF_FIRE_STATS, MAP_PATH } from '../constants';
@@ -99,6 +98,71 @@ export const ReinforcementsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (prop
 export const RainOfFireIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-7.5 16.5A10 10 0 0 0 12 22a10 10 0 0 0 7.5-3.5A10 10 0 0 0 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="m14.47 13.5-1.41-1.41L15 10.17l-1.91-1.91-1.41 1.41-2.12-2.12 1.41-1.41L12.87 5.5 15 3.38l2.12 2.12-1.41 1.41L17.62 9l1.41-1.41L21.15 9.7l-2.12 2.12-1.41-1.41L15.71 12l1.91 1.91-2.15 2.15zM8.5 14.5l-1-1L9.41 11.5l-1.91-1.91-1 1-2.12-2.12 1-1L7.29 5.5 9.5 3.38l2.12 2.12-1 1L8.71 8.41l1.91 1.91-2.12 2.13z"/></svg>);
 export const OathkeeperStandIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>);
 
+export const ShieldIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+    <g transform="translate(0, -1)">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#9ca3af" fill="#4b5563" />
+    <path d="M12 5 V 22 M 4 12 H 20" stroke="#be123c" strokeWidth="1.5"/>
+    <path d="M12 5 C 15 7 18 10 20 12 C 18 14 15 17 12 22" fill="#ef4444" stroke="none" />
+    <path d="M12 5 C 9 7 6 10 4 12 C 6 14 9 17 12 22" fill="#f3f4f6" stroke="none" />
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#f3f4f6" fill="none" strokeWidth="1.5" />
+    </g>
+  </svg>
+);
+
+export const FireIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg {...props} viewBox="0 0 24 24">
+    <defs>
+      <radialGradient id="flameGradient" cx="50%" cy="70%" r="60%" fx="50%" fy="80%">
+        <stop offset="0%" stopColor="#FFF9C4" /> 
+        <stop offset="40%" stopColor="#FFB74D" /> 
+        <stop offset="80%" stopColor="#F4511E" /> 
+        <stop offset="100%" stopColor="#BF360C" />
+      </radialGradient>
+      <filter id="glow">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="0.8" />
+      </filter>
+    </defs>
+    {/* Background glow shape */}
+    <path 
+      d="M12,2A9.13,9.13,0,0,0,5,8.28C5,13.2,12,22,12,22S19,13.2,19,8.28A9.13,9.13,0,0,0,12,2Z"
+      fill="#F57C00"
+      filter="url(#glow)"
+    />
+    {/* Main flame shape with gradient */}
+    <path 
+      d="M12,2A9.13,9.13,0,0,0,5,8.28C5,13.2,12,22,12,22S19,13.2,19,8.28A9.13,9.13,0,0,0,12,2Z"
+      fill="url(#flameGradient)"
+    />
+  </svg>
+);
+
+export const SwordsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg {...props} viewBox="0 0 24 24" fill="none">
+    {/* Sword 1 (background): Rotated 45 degrees */}
+    <g transform="rotate(45 12 12)">
+      {/* Blade */}
+      <path d="M12 3 v11" stroke="#cbd5e1" strokeWidth="3" strokeLinecap="round" />
+      <path d="M12 4 v9" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round" />
+      {/* Hilt */}
+      <path d="M9 14 h6" stroke="#52525b" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M12 14 v4" stroke="#52525b" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="12" cy="19" r="1.5" fill="#52525b" />
+    </g>
+    {/* Sword 2 (foreground): Rotated -45 degrees */}
+    <g transform="rotate(-45 12 12)">
+      {/* Blade */}
+      <path d="M12 3 v11" stroke="#cbd5e1" strokeWidth="3" strokeLinecap="round" />
+      <path d="M12 4 v9" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round" />
+      {/* Hilt */}
+      <path d="M9 14 h6" stroke="#52525b" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M12 14 v4" stroke="#52525b" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="12" cy="19" r="1.5" fill="#52525b" />
+    </g>
+  </svg>
+);
+
+
 // Game Board Elements
 export const GameBackground: React.FC<React.SVGProps<HTMLDivElement>> = (props) => {
     // Generate SVG path data from MAP_PATH constants
@@ -109,9 +173,13 @@ export const GameBackground: React.FC<React.SVGProps<HTMLDivElement>> = (props) 
 
     return (
         <div {...props}>
-            <div 
+            <div
                 className="absolute inset-0 w-full h-full"
-                style={{ background: 'radial-gradient(circle, #43a047, #1b5e20)' }} 
+                style={{
+                    backgroundImage: `url('https://i.imgur.com/bzKGLSf.png')`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                }}
             />
             <svg className="absolute inset-0 w-full h-full pointer-events-none">
                  <defs>
@@ -207,7 +275,7 @@ export const RallyPointFlag: React.FC<{ position: Vector2D }> = ({ position }) =
             </defs>
             <rect x="1" y="0" width="3" height="36" fill="url(#wood-pole-grad)" />
             <path d="M4 2 L22 6 L4 10 Z" fill="#cfd8dc" stroke="#455a64" strokeWidth="0.5"/>
-            <path d="M8 5 L10 5 L9 6 L10 7 L8 7 L7 6 Z" fill="#263238" />
+            <path d="M8 5 L 10 5 L 9 6 L 10 7 L 8 7 L 7 6 Z" fill="#263238" />
         </svg>
     </div>
 );
@@ -707,7 +775,7 @@ export const EnemyIcon: React.FC<{type: EnemyType, animationState: EnemyAnimatio
                         {/* Eye */}
                         <circle cx="12" cy="13" r="3.5" fill="#ffeb3b"/><circle cx="12" cy="13" r="1.5" fill="#c8b900"/><path d="M11 12 l2 2 M13 12 l-2 2" stroke="#c8b900" strokeWidth="0.5"/>
                          {/* Mouth & Teeth */}
-                        <path d="M8,20 C10,22 14,22 16,20 V 18 H 8 Z" fill="#424242"/>
+                        <path d="M8,20 C 10,22 14,22 16,20 V 18 H 8 Z" fill="#424242"/>
                         <rect x="8.5" y="18" width="1.5" height="2" fill="#fafafa"/><rect x="10.5" y="18" width="1.5" height="2" fill="#f5f5f5"/><rect x="12.5" y="18" width="1.5" height="2" fill="#fafafa"/>
                         <rect x="9.5" y="20" width="1.5" height="1" fill="#fafafa"/><rect x="11.5" y="20" width="1.5" height="1" fill="#f5f5f5"/>
                          {/* Arm & Axe */}
@@ -779,15 +847,17 @@ export const CatapultRockProjectileIcon: React.FC<React.SVGProps<SVGSVGElement>>
 // ===================================================================================
 export const Explosion: React.FC<{ position: Vector2D, radius: number }> = ({ position, radius }) => (
   <div className="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ left: position.x, top: position.y, zIndex: 15000 }}>
-    <svg width={radius * 2} height={radius * 2} viewBox="0 0 100 100">
-        <circle cx="50" cy="50" fill="yellow">
-            <animate attributeName="r" values="0;50" dur="0.3s" begin="0s" fill="freeze" />
+    <svg width={radius * 2} height={radius} viewBox="0 0 100 50">
+        <ellipse cx="50" cy="25" fill="yellow">
+            <animate attributeName="rx" values="0;50" dur="0.3s" begin="0s" fill="freeze" />
+            <animate attributeName="ry" values="0;25" dur="0.3s" begin="0s" fill="freeze" />
             <animate attributeName="opacity" values="1;0" dur="0.3s" begin="0s" fill="freeze" />
-        </circle>
-        <circle cx="50" cy="50" fill="orange">
-            <animate attributeName="r" values="0;40" dur="0.4s" begin="0s" fill="freeze" />
+        </ellipse>
+        <ellipse cx="50" cy="25" fill="orange">
+            <animate attributeName="rx" values="0;40" dur="0.4s" begin="0s" fill="freeze" />
+            <animate attributeName="ry" values="0;20" dur="0.4s" begin="0s" fill="freeze" />
             <animate attributeName="opacity" values="1;0" dur="0.4s" begin="0s" fill="freeze" />
-        </circle>
+        </ellipse>
     </svg>
   </div>
 );
@@ -795,14 +865,29 @@ export const Explosion: React.FC<{ position: Vector2D, radius: number }> = ({ po
 export const TargetCursor: React.FC<{ position: Vector2D; spell: PlayerSpell }> = ({ position, spell }) => {
   const radius = spell === 'RAIN_OF_FIRE' ? RAIN_OF_FIRE_STATS.radius : 40;
   const color = spell === 'RAIN_OF_FIRE' ? '#f44336' : '#4caf50';
+
+  // Rain of Fire has an elliptical, ground-based cursor
+  if (spell === 'RAIN_OF_FIRE') {
+      return (
+          <div className="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ left: position.x, top: position.y, zIndex: 20000 }}>
+              <svg width={radius * 2} height={radius} viewBox="0 0 200 100">
+                  <ellipse cx="100" cy="50" rx="98" ry="49" fill="none" stroke={color} strokeWidth="4" strokeDasharray="10 10">
+                      <animateTransform attributeName="transform" type="rotate" from="0 100 50" to="360 100 50" dur="5s" repeatCount="indefinite" />
+                  </ellipse>
+              </svg>
+          </div>
+      );
+  }
+
+  // Other spells (Reinforcements) get a circular cursor
   return (
-    <div className="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ left: position.x, top: position.y, zIndex: 20000 }}>
-        <svg width={radius * 2} height={radius * 2} viewBox="0 0 200 200">
-            <circle cx="100" cy="100" r="98" fill="none" stroke={color} strokeWidth="4" strokeDasharray="10 10">
-                 <animateTransform attributeName="transform" type="rotate" from="0 100 100" to="360 100 100" dur="5s" repeatCount="indefinite" />
-            </circle>
-        </svg>
-    </div>
+      <div className="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ left: position.x, top: position.y, zIndex: 20000 }}>
+          <svg width={radius * 2} height={radius * 2} viewBox="0 0 200 200">
+              <circle cx="100" cy="100" r="98" fill="none" stroke={color} strokeWidth="4" strokeDasharray="10 10">
+                  <animateTransform attributeName="transform" type="rotate" from="0 100 100" to="360 100 100" dur="5s" repeatCount="indefinite" />
+              </circle>
+          </svg>
+      </div>
   );
 };
 

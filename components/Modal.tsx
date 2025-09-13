@@ -1,8 +1,5 @@
-
-
 import React from 'react';
 import type { GameStatus } from '../types';
-import { UIPanel, UIButton } from './icons';
 
 interface ModalProps {
   status: GameStatus;
@@ -23,21 +20,15 @@ export const Modal: React.FC<ModalProps> = ({ status, onRestart }) => {
         className="absolute inset-0 bg-black/70 flex items-center justify-center p-4"
         style={{ zIndex: 25000 }}
     >
-      <div className="relative p-2 text-center text-white w-full max-w-lg">
-        <UIPanel 
-          className="absolute inset-0 w-full h-full" 
-        />
-        <div className="relative z-10 p-10">
-            <h2 className="text-5xl uppercase mb-4 tracking-wider" style={{ textShadow: '3px 3px #000' }}>{title}</h2>
-            <p className="text-xl text-gray-200 mb-8 leading-relaxed" style={{ textShadow: '2px 2px #000' }}>{message}</p>
-            <button
-            onClick={onRestart}
-            className="relative px-8 py-4 text-white text-2xl uppercase transition-transform transform hover:scale-105 active:scale-95"
-            >
-             <UIButton className="absolute inset-0 w-full h-full" />
-             <span className="relative z-10" style={{ textShadow: '2px 2px #000' }}>Play Again</span>
-            </button>
-        </div>
+      <div className="bg-gray-800/95 border border-gray-600 rounded-xl p-8 text-center text-white w-full max-w-lg shadow-2xl">
+        <h2 className="text-5xl uppercase mb-4 tracking-wider">{title}</h2>
+        <p className="text-xl text-gray-300 mb-8 leading-relaxed">{message}</p>
+        <button
+          onClick={onRestart}
+          className="bg-blue-600 text-white text-2xl uppercase py-3 px-8 rounded-lg border border-blue-800 hover:bg-blue-700 transition-transform transform hover:scale-105 active:scale-95"
+        >
+          Play Again
+        </button>
       </div>
     </div>
   );

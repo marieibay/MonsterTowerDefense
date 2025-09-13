@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useCallback, useRef, useMemo, useLayoutEffect } from 'react';
 import { GameBoard } from './components/GameBoard';
 import { HUD } from './components/HUD';
@@ -235,7 +234,30 @@ const App: React.FC = () => {
     deselectAll();
   }, [gameStatus, audioManager]);
 
-  const handleStartWave = useCallback((isEarly: boolean) => {
+  const handleStartWave = useCallback(async (isEarly: boolean) => {
+      // On first start, try to go fullscreen and lock orientation for a better mobile experience
+      if (gameStatus === 'IDLE' && currentWave === 0) {
+          try {
+              const element = document.documentElement as any;
+              if (element.requestFullscreen) {
+                  await element.requestFullscreen();
+              } else if (element.webkitRequestFullscreen) { /* Safari */
+                  await element.webkitRequestFullscreen();
+              } else if (element.msRequestFullscreen) { /* IE11 */
+                  await element.msRequestFullscreen();
+              }
+
+// FIX: Cast screen.orientation to 'any' to resolve TypeScript error.
+// The 'lock' method is experimental and may not be in the default TS DOM library definitions.
+// The runtime check ensures this is safe.
+              if (screen.orientation && typeof (screen.orientation as any).lock === 'function') {
+                  await (screen.orientation as any).lock('landscape');
+              }
+          } catch(err) {
+              console.error("Could not enter fullscreen or lock orientation:", err);
+          }
+      }
+
       if (isEarly) {
           setStats(s => ({...s, gold: s.gold + EARLY_WAVE_BONUS.gold}));
           setSpellCooldowns(cds => ({
@@ -244,7 +266,7 @@ const App: React.FC = () => {
           }));
       }
       startNextWave();
-  }, [startNextWave]);
+  }, [startNextWave, gameStatus, currentWave]);
 
   const handleSpotClick = useCallback((spot: Vector2D) => {
     audioManager.playSound('uiClick');
@@ -519,7 +541,12 @@ const App: React.FC = () => {
                   type: 'FIRE'
               }]);
               setEnemies(prevEnemies => prevEnemies.map(enemy => {
-                  if (getDistance(screenPos, enemy.position) <= RAIN_OF_FIRE_STATS.radius) {
+                  const dx = enemy.position.x - screenPos.x;
+                  const dy = enemy.position.y - screenPos.y;
+                  const radiusX = RAIN_OF_FIRE_STATS.radius;
+                  const radiusY = RAIN_OF_FIRE_STATS.radius / 2; // Isometric ratio
+
+                  if ((dx * dx) / (radiusX * radiusX) + (dy * dy) / (radiusY * radiusY) <= 1) {
                       return {...enemy, health: enemy.health - RAIN_OF_FIRE_STATS.damage};
                   }
                   return enemy;
@@ -1064,7 +1091,12 @@ const App: React.FC = () => {
                    audioManager.playSound('explosion');
                    setExplosions(exps => [...exps, { id: Date.now() + Math.random(), position: targetPosition, radius: proj.splashRadius!, lifetime: 300, type: 'GENERIC' }]);
                    currentEnemies = currentEnemies.map(enemy => {
-                       if (getDistance(enemy.position, targetPosition) <= proj.splashRadius!) {
+                       const dx = enemy.position.x - targetPosition.x;
+                       const dy = enemy.position.y - targetPosition.y;
+                       const radiusX = proj.splashRadius!;
+                       const radiusY = proj.splashRadius! / 2; // Isometric ratio
+
+                       if ((dx * dx) / (radiusX * radiusX) + (dy * dy) / (radiusY * radiusY) <= 1) {
                            return applyDamage(enemy);
                        }
                        return enemy;
@@ -1176,15 +1208,14 @@ const App: React.FC = () => {
                 newAnimationState = 'attack';
                 let damageDealt = enemyStats.damage;
                 if (blockerType === 'hero') {
-                     const heroBlocker = blocker as Hero;
-                     damageDealt *= (1 - heroBlocker.armorValue);
-                     heroBlocker.health = Math.max(0, heroBlocker.health - damageDealt);
-                     heroBlocker.timeSinceCombat = now;
-                     if (heroBlocker.health <= 0) {
-                        if (heroBlocker.animationState !== 'die') {
-                            heroBlocker.animationState = 'die';
-                            heroBlocker.deathPosition = { ...heroBlocker.position };
-                            heroBlocker.deathAnimTimer = 600;
+                     damageDealt *= (1 - currentHero.armorValue);
+                     currentHero.health = Math.max(0, currentHero.health - damageDealt);
+                     currentHero.timeSinceCombat = now;
+                     if (currentHero.health <= 0) {
+                        if (currentHero.animationState !== 'die') {
+                            currentHero.animationState = 'die';
+                            currentHero.deathPosition = { ...currentHero.position };
+                            currentHero.deathAnimTimer = 600;
                             audioManager.playSound('enemyDeath'); // a hero death sound
                         }
                      }

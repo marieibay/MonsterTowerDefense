@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import type { GameStatus, SelectableUnit, Tower, Enemy, Soldier, Hero, PlayerSpell } from '../types';
 import { 
@@ -7,12 +5,11 @@ import {
     WAVES, REINFORCEMENTS_STATS, RAIN_OF_FIRE_STATS
 } from '../constants';
 import { 
-    CoinIcon, HeartIcon, SkullIcon, SoundOnIcon, SoundOffIcon, 
-    UIPanel, UIButton,
+    CoinIcon, HeartIcon, SkullIcon,
     PlayIcon, PauseIcon,
     BriennePortrait, WinterfellWatchtowerPortrait, WeirwoodGrovePortrait, NorthernBarracksPortrait, SiegeWorkshopPortrait,
     NorthernSoldierPortrait, EnemyPortrait,
-    UpgradeIcon, SellIcon, ReinforcementsIcon, RainOfFireIcon, OathkeeperStandIcon
+    UpgradeIcon, SellIcon, ShieldIcon, FireIcon, SwordsIcon
 } from './icons';
 
 interface HUDProps {
@@ -91,25 +88,24 @@ const SelectionDetails: React.FC<{
     
     return (
         <div 
-            className="relative w-[450px] h-36 flex flex-row items-center p-2 gap-3 pointer-events-auto"
+            className="bg-gray-800/90 border border-gray-600 rounded-lg w-[450px] h-36 flex flex-row items-center p-3 gap-3 pointer-events-auto shadow-lg"
             onMouseDown={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
         >
-             <UIPanel className="absolute inset-0 w-full h-full" />
-             <div className="relative z-10 w-28 h-28 bg-gray-900 overflow-hidden border-2 border-gray-500 flex-shrink-0 p-1">
+             <div className="relative z-10 w-28 h-full bg-gray-900 overflow-hidden border-2 border-gray-500 rounded-md flex-shrink-0 p-1">
                 {getUnitPortrait(unit)}
              </div>
              <div className="relative z-10 flex flex-col justify-center text-left text-white flex-grow h-full w-full text-sm pb-0">
-                <h3 className="text-xl -mt-2" style={{ textShadow: '2px 2px #000' }}>{name}</h3>
+                <h3 className="text-xl -mt-2">{name}</h3>
                 {hasHealth && (
-                    <div className="relative w-full h-4 bg-black/50 border border-gray-600 overflow-hidden mt-1">
+                    <div className="relative w-full h-4 bg-black/50 border border-gray-600 rounded-full overflow-hidden mt-1">
                         <div className="h-full bg-red-500" style={{ width: `${healthPercentage}%` }}/>
                         <div className="absolute inset-0 flex items-center justify-center text-xs font-mono">
                             {Math.ceil(health)}/{maxHealth}
                         </div>
                     </div>
                 )}
-                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm" style={{ textShadow: '1px 1px #000' }}>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm">
                    {damage !== 'N/A' && <span>DMG: {damage}</span>}
                    {range > 0 && <span>RNG: {range}</span>}
                    {speed !== 'N/A' && <span>SPD: {speed}</span>}
@@ -121,10 +117,9 @@ const SelectionDetails: React.FC<{
                                 <button 
                                     onClick={() => onUpgrade(unit.id)}
                                     disabled={gold < towerStats.upgradeCost}
-                                    className="relative flex-grow h-10 px-2 disabled:grayscale disabled:cursor-not-allowed transition-transform transform hover:scale-105"
+                                    className="flex-grow h-10 px-2 disabled:grayscale disabled:cursor-not-allowed transition-transform transform hover:scale-105 bg-blue-600 text-white rounded-lg border border-blue-800 hover:bg-blue-700"
                                 >
-                                    <UIButton/>
-                                    <div className="absolute inset-0 flex items-center justify-center gap-1 z-10 text-xs">
+                                    <div className="flex items-center justify-center gap-1 z-10 text-xs">
                                         <UpgradeIcon className="w-5 h-5"/>
                                         <span>{towerStats.upgradeCost}</span>
                                         <CoinIcon className="w-4 h-4"/>
@@ -133,10 +128,9 @@ const SelectionDetails: React.FC<{
                             )}
                             <button 
                                 onClick={() => onSell(unit.id)}
-                                className="relative flex-shrink-0 h-10 px-4 transition-transform transform hover:scale-105"
+                                className="flex-shrink-0 h-10 px-4 transition-transform transform hover:scale-105 bg-blue-600 text-white rounded-lg border border-blue-800 hover:bg-blue-700"
                             >
-                                <UIButton/>
-                                <div className="absolute inset-0 flex items-center justify-center gap-1 z-10 text-xs">
+                                <div className="flex items-center justify-center gap-1 z-10 text-xs">
                                     <SellIcon className="w-5 h-5"/>
                                     <span>{towerStats.sellValue}</span>
                                     <CoinIcon className="w-4 h-4"/>
@@ -161,16 +155,15 @@ const HeroAbilityButton: React.FC<{hero: Hero, onCast: () => void}> = ({hero, on
         <button
             onClick={onCast}
             disabled={!ready}
-            className={`relative w-20 h-20 transition-transform transform hover:scale-105 active:scale-95 disabled:grayscale disabled:cursor-not-allowed ${active ? 'border-4 border-yellow-400' : ''} pointer-events-auto`}
+            className={`relative w-16 h-16 transition-transform transform hover:scale-105 active:scale-95 disabled:grayscale disabled:cursor-not-allowed pointer-events-auto bg-gray-800 rounded-lg border border-gray-600 overflow-hidden ${active ? 'border-2 border-yellow-400' : ''}`}
         >
-            <UIButton className="absolute inset-0 w-full h-full"/>
-            <div className="relative z-10 w-full h-full flex items-center justify-center p-2">
-                <OathkeeperStandIcon className="w-full h-full"/>
+            <div className="w-full h-full flex items-center justify-center p-2">
+                <ShieldIcon className="w-full h-full"/>
             </div>
             {!ready && (
                  <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-20 overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full bg-black/50" style={{height: `${100 - cooldownPercentage}%`}}/>
-                    <span className="text-xl font-mono text-white relative" style={{textShadow: '1px 1px #000'}}>{Math.ceil(cooldown/1000)}</span>
+                    <div className="absolute bottom-0 left-0 w-full bg-blue-500/50" style={{height: `${cooldownPercentage}%`}}/>
+                    <span className="text-xl font-mono text-white relative">{Math.ceil(cooldown/1000)}</span>
                 </div>
             )}
         </button>
@@ -178,7 +171,7 @@ const HeroAbilityButton: React.FC<{hero: Hero, onCast: () => void}> = ({hero, on
 }
 
 const SpellButton: React.FC<{spell: PlayerSpell, cooldown: number, onCast: (s: PlayerSpell) => void}> = ({spell, cooldown, onCast}) => {
-    const Icon = spell === 'REINFORCEMENTS' ? ReinforcementsIcon : RainOfFireIcon;
+    const Icon = spell === 'REINFORCEMENTS' ? SwordsIcon : FireIcon;
     const totalCooldown = spell === 'REINFORCEMENTS' ? REINFORCEMENTS_STATS.cooldown : RAIN_OF_FIRE_STATS.cooldown;
     const cooldownPercentage = 100 - (cooldown / totalCooldown) * 100;
     const ready = cooldown <= 0;
@@ -186,16 +179,15 @@ const SpellButton: React.FC<{spell: PlayerSpell, cooldown: number, onCast: (s: P
         <button
             onClick={() => onCast(spell)}
             disabled={!ready}
-            className="relative w-20 h-20 transition-transform transform hover:scale-105 active:scale-95 disabled:grayscale disabled:cursor-not-allowed pointer-events-auto"
+            className="relative w-16 h-16 transition-transform transform hover:scale-105 active:scale-95 disabled:grayscale disabled:cursor-not-allowed pointer-events-auto bg-gray-800 rounded-lg border border-gray-600 overflow-hidden"
         >
-            <UIButton className="absolute inset-0 w-full h-full"/>
-            <div className="relative z-10 w-full h-full flex items-center justify-center p-2">
+            <div className="w-full h-full flex items-center justify-center p-2">
                 <Icon className="w-full h-full"/>
             </div>
             {!ready && (
                 <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-20 overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full bg-black/50" style={{height: `${100-cooldownPercentage}%`}}/>
-                    <span className="text-xl font-mono text-white relative" style={{textShadow: '1px 1px #000'}}>{Math.ceil(cooldown/1000)}</span>
+                    <div className="absolute bottom-0 left-0 w-full bg-blue-500/50" style={{height: `${cooldownPercentage}%`}}/>
+                    <span className="text-xl font-mono text-white relative">{Math.ceil(cooldown/1000)}</span>
                 </div>
             )}
         </button>
@@ -211,69 +203,50 @@ export const HUD: React.FC<HUDProps> = ({
     
   return (
     <div 
-        className="absolute inset-0 text-white pointer-events-none p-4 text-xs tracking-tighter flex flex-col justify-between"
+        className="absolute inset-0 text-white pointer-events-none p-4 flex flex-col justify-between"
         style={{ zIndex: 9000 }}
     >
       {/* Top Bar */}
       <div className="w-full flex justify-between items-start">
         {/* Top Left: Stats */}
-        <div className="flex items-center gap-4">
-            <div className="relative flex items-center justify-center w-40 h-12 pointer-events-auto">
-            <UIPanel className="absolute inset-0 w-full h-full" />
-            <div className="relative z-10 flex items-center gap-2 text-xl">
-                <CoinIcon id="gold-hud-icon" className="w-6 h-6" />
-                <span className="text-yellow-300" style={{ textShadow: '2px 2px #000' }}>{stats.gold}</span>
+        <div className="flex items-center gap-2 pointer-events-auto">
+            <div className="bg-gray-800 rounded-lg px-4 py-2 flex items-center gap-2 border border-gray-600">
+                <CoinIcon className="w-6 h-6" />
+                <span className="text-lg text-yellow-300 tracking-tighter">{stats.gold}</span>
             </div>
-            </div>
-            <div className="relative flex items-center justify-center w-32 h-12 pointer-events-auto">
-            <UIPanel className="absolute inset-0 w-full h-full" />
-            <div className="relative z-10 flex items-center gap-2 text-xl">
+            <div className="bg-gray-800 rounded-lg px-4 py-2 flex items-center gap-2 border border-gray-600">
                 <HeartIcon className="w-6 h-6" />
-                <span className="text-red-400" style={{ textShadow: '2px 2px #000' }}>{stats.lives}</span>
-            </div>
+                <span className="text-lg text-red-400 tracking-tighter">{stats.lives}</span>
             </div>
         </div>
-
-        {/* Top Right: Wave Info & Controls */}
-        <div className="flex flex-col items-end gap-2">
-            <div className='flex items-center gap-4'>
-                <div className="relative flex items-center justify-center w-48 h-12 pointer-events-auto">
-                    <UIPanel className="absolute inset-0 w-full h-full" />
-                    <div className="relative z-10 text-lg text-gray-300" style={{ textShadow: '2px 2px #000' }}>
-                    Wave: <span className="text-white">{waveDisplay}/{WAVES.length}</span>
-                    </div>
-                </div>
-                <div className="flex flex-row gap-2">
-                    <button onClick={onTogglePause} className="relative w-12 h-12 flex items-center justify-center transition-transform transform hover:scale-105 active:scale-95 pointer-events-auto" aria-label={isPaused ? "Play" : "Pause"}>
-                        <UIButton className="absolute inset-0 w-full h-full" />
-                        <div className="relative z-10"> {isPaused ? <PlayIcon className="w-8 h-8" /> : <PauseIcon className="w-8 h-8" />}</div>
-                    </button>
-                    <button onClick={onToggleMute} className="relative w-12 h-12 flex items-center justify-center transition-transform transform hover:scale-105 active:scale-95 pointer-events-auto" aria-label={isMuted ? "Unmute" : "Mute"}>
-                        <UIButton className="absolute inset-0 w-full h-full" />
-                        <div className="relative z-10">{isMuted ? <SoundOffIcon className="w-8 h-8" /> : <SoundOnIcon className="w-8 h-8" />}</div>
-                    </button>
-                </div>
+        
+        <div className="flex items-start gap-2 pointer-events-auto">
+            <div className="bg-gray-800 rounded-lg px-4 py-2 flex items-center gap-2 border border-gray-600 text-center">
+                <span className="text-lg text-gray-300">WAVE: {waveDisplay}/{WAVES.length}</span>
             </div>
             {(gameStatus === 'IDLE' || gameStatus === 'WAVE_COMPLETE') && (
-                <button
-                onClick={() => onStartWave(gameStatus === 'WAVE_COMPLETE')}
-                disabled={isPaused}
-                className="relative px-4 py-2 text-white text-lg transition-transform transform hover:scale-105 active:scale-95 disabled:grayscale disabled:cursor-not-allowed pointer-events-auto"
-                >
-                    <UIButton className="absolute inset-0 w-full h-full" />
-                    <div className="relative z-10 flex flex-col items-center" style={{ textShadow: '2px 2px #000' }}>
-                    {gameStatus === 'IDLE' ? (
-                        <span>Start Wave</span>
-                    ) : (
-                        <>
-                            <span>Call Early</span>
-                            <span className="text-xs -mt-1 text-yellow-300 block whitespace-nowrap"> (+{EARLY_WAVE_BONUS.gold}G / -{EARLY_WAVE_BONUS.cooldownReduction/1000}s CD)</span>
-                        </>
-                    )}
-                    </div>
-                    {gameStatus === 'WAVE_COMPLETE' && nextWaveTimer > 0 && <div className="absolute -bottom-4 text-lg text-white">{Math.ceil(nextWaveTimer/1000)}s</div>}
-                </button>
+                <div className="flex flex-col items-center">
+                    <button
+                    onClick={() => onStartWave(gameStatus === 'WAVE_COMPLETE')}
+                    disabled={isPaused}
+                    className="bg-green-600 text-white text-lg py-2 px-4 rounded-lg border border-green-800 hover:bg-green-700 disabled:grayscale disabled:cursor-not-allowed transition-all"
+                    >
+                        Start Wave
+                    </button>
+                    {gameStatus === 'WAVE_COMPLETE' && nextWaveTimer > 0 && <div className="mt-1 text-lg text-white">{Math.ceil(nextWaveTimer/1000)}s</div>}
+                </div>
             )}
+        </div>
+
+
+        {/* Top Right: Controls */}
+        <div className="flex items-center gap-2 p-1 border border-gray-600 rounded-lg pointer-events-auto bg-gray-900/50">
+            <button onClick={onTogglePause} className="bg-blue-600 text-white text-sm py-1 px-3 rounded-md border border-blue-800 hover:bg-blue-700 w-24" aria-label={isPaused ? "Resume" : "Pause"}>
+              {isPaused ? 'Resume' : 'Pause'}
+            </button>
+            <button onClick={onToggleMute} className="bg-blue-600 text-white text-sm py-1 px-3 rounded-md border border-blue-800 hover:bg-blue-700 w-24" aria-label={isMuted ? "Unmute" : "Mute"}>
+              {isMuted ? 'Unmute' : 'Mute'}
+            </button>
         </div>
       </div>
 
@@ -294,12 +267,9 @@ export const HUD: React.FC<HUDProps> = ({
             ) : (
             <>
                 {gameStatus === 'WAVE_IN_PROGRESS' && (
-                    <div className="relative flex items-center gap-3 px-8 py-2 text-white text-xl pointer-events-auto h-12">
-                        <UIPanel className="absolute inset-0 w-full h-full" />
-                        <div className="relative z-10 flex items-center gap-3" style={{ textShadow: '2px 2px #000' }}>
+                    <div className="bg-gray-800/90 border border-gray-600 rounded-lg flex items-center gap-3 px-8 py-2 text-white text-xl pointer-events-auto h-12">
                         <SkullIcon className="w-6 h-6 animate-pulse"/>
                         <span>Wave {currentWave}</span>
-                        </div>
                     </div>
                 )}
             </>
