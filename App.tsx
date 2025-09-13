@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo, useLayoutEffect } from 'react';
+import { GoogleGenAI, Type } from "@google/genai";
 import { GameBoard } from './components/GameBoard';
 import { HUD } from './components/HUD';
 import { TowerMenu } from './components/TowerMenu';
@@ -35,6 +36,7 @@ import type {
   RallyPointDragState,
   ProjectileType,
   GroundUnitAnimationState,
+  Wave,
 } from './types';
 import { getDistance, AudioManager, gameToScreen } from './utils';
 import { MAP_PATH } from './constants';
@@ -45,19 +47,62 @@ const projectileSoundMap: Record<ProjectileType, 'ARROW' | 'MAGIC_BOLT' | 'CANNO
     'CATAPULT_ROCK': 'CANNONBALL',
 };
 
-const StartScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
-  <div
-    className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-white z-[30000] cursor-pointer"
-    onClick={onStart}
-    role="button"
-    aria-label="Start Game"
-  >
-    <h1 className="text-5xl mb-4 text-center" style={{ textShadow: '2px 2px #000' }}>
-      Kingdom Defense: Tower Rush
-    </h1>
-    <p className="text-2xl animate-pulse">Tap anywhere to begin</p>
-  </div>
-);
+const StartScreen: React.FC<{ 
+  onStart: () => void;
+  onGenerateWaves: () => void;
+  generationStatus: 'IDLE' | 'GENERATING' | 'SUCCESS' | 'ERROR';
+}> = ({ onStart, onGenerateWaves, generationStatus }) => {
+  const getButtonContent = () => {
+    switch (generationStatus) {
+      case 'GENERATING':
+        return (
+          <>
+            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Generating...
+          </>
+        );
+      case 'SUCCESS':
+        return 'Waves Generated!';
+      case 'ERROR':
+        return 'Generation Failed!';
+      case 'IDLE':
+      default:
+        return 'Generate Waves with AI';
+    }
+  };
+
+  return (
+    <div
+      className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-white z-[30000]"
+    >
+      <h1 className="text-5xl mb-8 text-center" style={{ textShadow: '2px 2px #000' }}>
+        Kingdom Defense: Tower Rush
+      </h1>
+      <button
+        onClick={onStart}
+        className="text-3xl mb-4 px-6 py-3 bg-green-600 rounded-lg border border-green-800 hover:bg-green-700 transition-transform transform hover:scale-105"
+      >
+        Start Game
+      </button>
+      <button
+        onClick={onGenerateWaves}
+        disabled={generationStatus === 'GENERATING'}
+        className={`text-xl px-6 py-3 rounded-lg border transition-all flex items-center justify-center
+          ${generationStatus === 'ERROR' ? 'bg-red-600 border-red-800' : 'bg-blue-600 border-blue-800'}
+          ${generationStatus !== 'GENERATING' ? 'hover:bg-blue-700 hover:scale-105' : ''}
+          ${generationStatus === 'SUCCESS' ? 'bg-green-500 border-green-700' : ''}
+          disabled:grayscale disabled:cursor-not-allowed`}
+      >
+        {getButtonContent()}
+      </button>
+      {generationStatus === 'SUCCESS' && <p className="mt-2 text-green-300">New enemy waves are ready!</p>}
+      {generationStatus === 'ERROR' && <p className="mt-2 text-red-300">Using default waves.</p>}
+    </div>
+  );
+};
 
 const App: React.FC = () => {
   const [gameStatus, setGameStatus] = useState<GameStatus>('START_SCREEN');
@@ -73,6 +118,8 @@ const App: React.FC = () => {
   const [spellCooldowns, setSpellCooldowns] = useState({ REINFORCEMENTS: 0, RAIN_OF_FIRE: 0 });
   const [activeSpell, setActiveSpell] = useState<PlayerSpell | null>(null);
   const [nextWaveTimer, setNextWaveTimer] = useState(0);
+  const [waves, setWaves] = useState<Wave[]>(WAVES);
+  const [aiWaveGenerationStatus, setAiWaveGenerationStatus] = useState<'IDLE' | 'GENERATING' | 'SUCCESS' | 'ERROR'>('IDLE');
   
   const [hero, setHero] = useState<Hero>({
     id: 1,
@@ -218,6 +265,8 @@ const App: React.FC = () => {
     setIsPaused(false);
     waveSpawnData.current = { spawnIndex: 0, lastSpawnTime: 0 };
     audioManager.stopMusic();
+    setWaves(WAVES); // Reset to default waves
+    setAiWaveGenerationStatus('IDLE');
   }, [audioManager]);
   
     useEffect(() => {
@@ -239,15 +288,14 @@ const App: React.FC = () => {
     deselectAll();
   }, [gameStatus, audioManager]);
 
-    const handleEnterGame = useCallback(async () => {
-    // On first start, try to go fullscreen and lock orientation for a better mobile experience
+  const handleEnterGame = useCallback(async () => {
     try {
         const element = document.documentElement as any;
         if (element.requestFullscreen) {
             await element.requestFullscreen();
-        } else if (element.webkitRequestFullscreen) { /* Safari */
+        } else if (element.webkitRequestFullscreen) {
             await element.webkitRequestFullscreen();
-        } else if (element.msRequestFullscreen) { /* IE11 */
+        } else if (element.msRequestFullscreen) {
             await element.msRequestFullscreen();
         }
 
@@ -255,16 +303,73 @@ const App: React.FC = () => {
             await (screen.orientation as any).lock('landscape');
         }
     } catch(err) {
-        // Silently ignore errors. Fullscreen and orientation lock can fail in
-        // certain contexts (e.g., sandboxed iframes) and are not critical.
-        // The app has CSS fallbacks to prompt the user to rotate their device.
+        // Silently ignore errors
     }
-    
-    // The user has interacted, so we can now start the music.
     audioManager.playMusic();
-    
     setGameStatus('IDLE');
   }, [audioManager]);
+
+  const generateWavesWithAI = useCallback(async () => {
+    setAiWaveGenerationStatus('GENERATING');
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+        
+        const prompt = `You are a tower defense game designer for a game called "Kingdom Defense: Tower Rush".
+        Create a series of exactly 6 balanced waves of enemies. The waves should gradually increase in difficulty.
+        The available enemy types are 'ORC_GRUNT', 'ORC_BERSERKER', and 'OGRE_BRUTE'.
+        - ORC_GRUNT is a weak, fast unit.
+        - ORC_BERSERKER is a medium health, armored unit.
+        - OGRE_BRUTE is a slow, high-health, high-damage unit.
+        The spawn rate is the time in milliseconds between each enemy spawn in a wave; a lower number means faster spawns. A good range is between 1200ms and 2500ms.
+        Return the data as a JSON array that matches the provided schema.`;
+
+        const responseSchema = {
+            type: Type.ARRAY,
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    enemies: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.STRING,
+                            enum: ['ORC_GRUNT', 'ORC_BERSERKER', 'OGRE_BRUTE'],
+                        },
+                        description: 'An array of enemy types for this wave.'
+                    },
+                    spawnRate: {
+                        type: Type.INTEGER,
+                        description: 'Time in milliseconds between each enemy spawn.'
+                    },
+                },
+                required: ["enemies", "spawnRate"],
+            },
+        };
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema,
+            },
+        });
+
+        const jsonStr = response.text.trim();
+        const newWaves = JSON.parse(jsonStr);
+
+        if (Array.isArray(newWaves) && newWaves.length > 0 && newWaves.every(w => 'enemies' in w && 'spawnRate' in w)) {
+            setWaves(newWaves as Wave[]);
+            setAiWaveGenerationStatus('SUCCESS');
+        } else {
+            throw new Error("Invalid wave data received from AI.");
+        }
+
+    } catch (error) {
+        console.error("Error generating waves with AI:", error);
+        setAiWaveGenerationStatus('ERROR');
+        setWaves(WAVES);
+    }
+  }, []);
 
   const handleStartWave = useCallback((isEarly: boolean) => {
       if (isEarly) {
@@ -655,7 +760,7 @@ const App: React.FC = () => {
               });
       });
 
-      const waveDefinition = WAVES[currentWave - 1];
+      const waveDefinition = waves[currentWave - 1];
       if (gameStatus === 'WAVE_IN_PROGRESS' && waveDefinition && waveSpawnData.current.spawnIndex < waveDefinition.enemies.length) {
           if (now - waveSpawnData.current.lastSpawnTime > waveDefinition.spawnRate) {
               const enemyType = waveDefinition.enemies[waveSpawnData.current.spawnIndex];
@@ -1340,7 +1445,7 @@ const App: React.FC = () => {
       }
       
       if (gameStatus === 'WAVE_IN_PROGRESS' && waveDefinition && waveSpawnData.current.spawnIndex >= waveDefinition.enemies.length && currentEnemies.length === 0) {
-         if (currentWave === WAVES.length) {
+         if (currentWave === waves.length) {
               setGameStatus('VICTORY');
               audioManager.playSound('victory');
               audioManager.stopMusic();
@@ -1363,7 +1468,7 @@ const App: React.FC = () => {
     }, 1000 / GAME_CONFIG.fps);
 
     return () => clearInterval(intervalId);
-  }, [gameStatus, isPaused, currentWave, enemies, towers, projectiles, soldiers, hero, reinforcements, audioManager, selectedUnit, startNextWave]);
+  }, [gameStatus, isPaused, currentWave, enemies, towers, projectiles, soldiers, hero, reinforcements, audioManager, selectedUnit, startNextWave, waves]);
 
   const selectedTower = useMemo(() => {
     if (selectedUnit && 'level' in selectedUnit) {
@@ -1392,7 +1497,7 @@ const App: React.FC = () => {
         onMouseLeave={gameStatus !== 'START_SCREEN' ? cancelRallyPointDrag : undefined}
         onTouchCancel={gameStatus !== 'START_SCREEN' ? cancelRallyPointDrag : undefined}
       >
-        {gameStatus === 'START_SCREEN' && <StartScreen onStart={handleEnterGame} />}
+        {gameStatus === 'START_SCREEN' && <StartScreen onStart={handleEnterGame} onGenerateWaves={generateWavesWithAI} generationStatus={aiWaveGenerationStatus} />}
         <GameBoard
           towers={towers}
           enemies={enemies}
@@ -1448,6 +1553,7 @@ const App: React.FC = () => {
           onCastSpell={handleCastSpell}
           gold={stats.gold}
           hero={hero}
+          totalWaves={waves.length}
        />
         {(gameStatus === 'GAME_OVER' || gameStatus === 'VICTORY') && (
           <Modal status={gameStatus} onRestart={resetGame} />

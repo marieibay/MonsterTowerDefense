@@ -30,6 +30,7 @@ interface HUDProps {
   onCastSpell: (spell: PlayerSpell) => void;
   gold: number;
   hero: Hero;
+  totalWaves: number;
 }
 
 const getUnitPortrait = (unit: SelectableUnit) => {
@@ -197,7 +198,7 @@ const SpellButton: React.FC<{spell: PlayerSpell, cooldown: number, onCast: (s: P
 export const HUD: React.FC<HUDProps> = ({ 
     stats, currentWave, gameStatus, onStartWave, nextWaveTimer,
     isMuted, onToggleMute, isPaused, onTogglePause, selectedUnit,
-    onUpgradeTower, onSellTower, onHeroAbility, spellCooldowns, onCastSpell, gold, hero
+    onUpgradeTower, onSellTower, onHeroAbility, spellCooldowns, onCastSpell, gold, hero, totalWaves
 }) => {
   const waveDisplay = gameStatus === 'IDLE' ? 0 : currentWave;
     
@@ -222,7 +223,7 @@ export const HUD: React.FC<HUDProps> = ({
         
         <div className="flex items-start gap-2 pointer-events-auto">
             <div className="bg-gray-800 rounded-lg px-4 py-2 flex items-center gap-2 border border-gray-600 text-center">
-                <span className="text-lg text-gray-300">WAVE: {waveDisplay}/{WAVES.length}</span>
+                <span className="text-lg text-gray-300">WAVE: {waveDisplay}/{totalWaves}</span>
             </div>
             {(gameStatus === 'IDLE' || gameStatus === 'WAVE_COMPLETE') && (
                 <div className="flex flex-col items-center">
