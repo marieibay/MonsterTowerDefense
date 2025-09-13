@@ -112,7 +112,7 @@ const App: React.FC = () => {
         const { clientWidth, clientHeight } = containerRef.current;
         const scaleX = clientWidth / GAME_CONFIG.width;
         const scaleY = clientHeight / GAME_CONFIG.height;
-        setScale(Math.min(scaleX, scaleY));
+        setScale(Math.max(scaleX, scaleY));
       }
     };
 

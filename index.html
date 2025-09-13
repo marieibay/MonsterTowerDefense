@@ -74,5 +74,21 @@
     <div id="root"></div>
     <audio id="bg-music" src="https://storage.googleapis.com/lev-public-files/medieval-lute.mp3" loop></audio>
     <script type="module" src="/index.tsx"></script>
+    <script>
+      // Prevent zoom on double tap (especially for older iOS)
+      let lastTouchEnd = 0;
+      document.addEventListener('touchend', function (event) {
+          const now = (new Date()).getTime();
+          if (now - lastTouchEnd <= 300) {
+              event.preventDefault();
+          }
+          lastTouchEnd = now;
+      }, { passive: false });
+
+      // Prevent context menu on long press
+      document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+      });
+    </script>
   </body>
 </html>
