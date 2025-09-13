@@ -151,7 +151,7 @@ export type PlayerSpell = 'REINFORCEMENTS' | 'RAIN_OF_FIRE';
 
 export type SelectableUnit = Tower | Enemy | Soldier | Hero;
 
-export type GameStatus = 'IDLE' | 'WAVE_IN_PROGRESS' | 'WAVE_COMPLETE' | 'GAME_OVER' | 'VICTORY';
+export type GameStatus = 'START_SCREEN' | 'IDLE' | 'WAVE_IN_PROGRESS' | 'WAVE_COMPLETE' | 'GAME_OVER' | 'VICTORY';
 
 export interface Wave {
   enemies: EnemyType[];

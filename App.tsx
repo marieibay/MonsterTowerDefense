@@ -45,8 +45,22 @@ const projectileSoundMap: Record<ProjectileType, 'ARROW' | 'MAGIC_BOLT' | 'CANNO
     'CATAPULT_ROCK': 'CANNONBALL',
 };
 
+const StartScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
+  <div
+    className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-white z-[30000] cursor-pointer"
+    onClick={onStart}
+    role="button"
+    aria-label="Start Game"
+  >
+    <h1 className="text-5xl mb-4 text-center" style={{ textShadow: '2px 2px #000' }}>
+      Kingdom Defense: Tower Rush
+    </h1>
+    <p className="text-2xl animate-pulse">Tap anywhere to begin</p>
+  </div>
+);
+
 const App: React.FC = () => {
-  const [gameStatus, setGameStatus] = useState<GameStatus>('IDLE');
+  const [gameStatus, setGameStatus] = useState<GameStatus>('START_SCREEN');
   const [stats, setStats] = useState({ gold: GAME_CONFIG.startingGold, lives: GAME_CONFIG.startingLives });
   const [currentWave, setCurrentWave] = useState(0);
   const [towers, setTowers] = useState<Tower[]>([]);
@@ -130,15 +144,6 @@ const App: React.FC = () => {
     audioManager.toggleMute(isMuted);
   }, [isMuted, audioManager]);
   
-  useEffect(() => {
-    // Autoplay for background music is often restricted by browsers.
-    // This effect starts the music when the first wave begins,
-    // which is triggered by a user click, ensuring compatibility.
-    if (gameStatus === 'WAVE_IN_PROGRESS' && currentWave === 1 && !isPaused) {
-      audioManager.playMusic();
-    }
-  }, [gameStatus, currentWave, isPaused, audioManager]);
-
   const waveSpawnData = useRef({ spawnIndex: 0, lastSpawnTime: 0 });
 
   const findClosestPathPoint = useCallback((point: Vector2D): Vector2D => {
@@ -234,30 +239,34 @@ const App: React.FC = () => {
     deselectAll();
   }, [gameStatus, audioManager]);
 
-  const handleStartWave = useCallback(async (isEarly: boolean) => {
-      // On first start, try to go fullscreen and lock orientation for a better mobile experience
-      if (gameStatus === 'IDLE' && currentWave === 0) {
-          try {
-              const element = document.documentElement as any;
-              if (element.requestFullscreen) {
-                  await element.requestFullscreen();
-              } else if (element.webkitRequestFullscreen) { /* Safari */
-                  await element.webkitRequestFullscreen();
-              } else if (element.msRequestFullscreen) { /* IE11 */
-                  await element.msRequestFullscreen();
-              }
+    const handleEnterGame = useCallback(async () => {
+    // On first start, try to go fullscreen and lock orientation for a better mobile experience
+    try {
+        const element = document.documentElement as any;
+        if (element.requestFullscreen) {
+            await element.requestFullscreen();
+        } else if (element.webkitRequestFullscreen) { /* Safari */
+            await element.webkitRequestFullscreen();
+        } else if (element.msRequestFullscreen) { /* IE11 */
+            await element.msRequestFullscreen();
+        }
 
-// FIX: Cast screen.orientation to 'any' to resolve TypeScript error.
-// The 'lock' method is experimental and may not be in the default TS DOM library definitions.
-// The runtime check ensures this is safe.
-              if (screen.orientation && typeof (screen.orientation as any).lock === 'function') {
-                  await (screen.orientation as any).lock('landscape');
-              }
-          } catch(err) {
-              console.error("Could not enter fullscreen or lock orientation:", err);
-          }
-      }
+        if (screen.orientation && typeof (screen.orientation as any).lock === 'function') {
+            await (screen.orientation as any).lock('landscape');
+        }
+    } catch(err) {
+        // Silently ignore errors. Fullscreen and orientation lock can fail in
+        // certain contexts (e.g., sandboxed iframes) and are not critical.
+        // The app has CSS fallbacks to prompt the user to rotate their device.
+    }
+    
+    // The user has interacted, so we can now start the music.
+    audioManager.playMusic();
+    
+    setGameStatus('IDLE');
+  }, [audioManager]);
 
+  const handleStartWave = useCallback((isEarly: boolean) => {
       if (isEarly) {
           setStats(s => ({...s, gold: s.gold + EARLY_WAVE_BONUS.gold}));
           setSpellCooldowns(cds => ({
@@ -266,7 +275,7 @@ const App: React.FC = () => {
           }));
       }
       startNextWave();
-  }, [startNextWave, gameStatus, currentWave]);
+  }, [startNextWave]);
 
   const handleSpotClick = useCallback((spot: Vector2D) => {
     audioManager.playSound('uiClick');
@@ -1374,15 +1383,16 @@ const App: React.FC = () => {
           transformOrigin: 'center center',
           touchAction: 'none',
         }}
-        onMouseDown={handleMapInteractionStart}
-        onMouseMove={handleMapInteractionMove}
-        onMouseUp={handleMapInteractionEnd}
-        onTouchStart={handleMapInteractionStart}
-        onTouchMove={handleMapInteractionMove}
-        onTouchEnd={handleMapInteractionEnd}
-        onMouseLeave={cancelRallyPointDrag}
-        onTouchCancel={cancelRallyPointDrag}
+        onMouseDown={gameStatus !== 'START_SCREEN' ? handleMapInteractionStart : undefined}
+        onMouseMove={gameStatus !== 'START_SCREEN' ? handleMapInteractionMove : undefined}
+        onMouseUp={gameStatus !== 'START_SCREEN' ? handleMapInteractionEnd : undefined}
+        onTouchStart={gameStatus !== 'START_SCREEN' ? handleMapInteractionStart : undefined}
+        onTouchMove={gameStatus !== 'START_SCREEN' ? handleMapInteractionMove : undefined}
+        onTouchEnd={gameStatus !== 'START_SCREEN' ? handleMapInteractionEnd : undefined}
+        onMouseLeave={gameStatus !== 'START_SCREEN' ? cancelRallyPointDrag : undefined}
+        onTouchCancel={gameStatus !== 'START_SCREEN' ? cancelRallyPointDrag : undefined}
       >
+        {gameStatus === 'START_SCREEN' && <StartScreen onStart={handleEnterGame} />}
         <GameBoard
           towers={towers}
           enemies={enemies}
