@@ -48,77 +48,105 @@ const projectileSoundMap: Record<ProjectileType, 'ARROW' | 'MAGIC_BOLT' | 'CANNO
     'CATAPULT_ROCK': 'CANNONBALL',
 };
 
-const StartScreen: React.FC<{ 
+const StartScreen: React.FC<{
   onStart: () => void;
   onGenerateWaves: () => void;
   generationStatus: 'IDLE' | 'GENERATING' | 'SUCCESS' | 'ERROR';
 }> = ({ onStart, onGenerateWaves, generationStatus }) => {
+  const [showMobileInstructions, setShowMobileInstructions] = useState(false);
+  useEffect(() => {
+    // Detect mobile device
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    setShowMobileInstructions(isMobile);
+  }, []);
+
   const getButtonContent = () => {
     switch (generationStatus) {
       case 'GENERATING':
         return (
           <>
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin -ml-1 mr-3 h-4 w-4 sm:h-5 sm:w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            Generating...
+            <span className="text-xs sm:text-base">Generating...</span>
           </>
         );
       case 'SUCCESS':
-        return 'Waves Generated!';
+        return <span className="text-xs sm:text-base">Waves Generated!</span>;
       case 'ERROR':
-        return 'Generation Failed!';
+        return <span className="text-xs sm:text-base">Generation Failed!</span>;
       case 'IDLE':
       default:
-        return 'Generate Waves with AI';
+        return <span className="text-xs sm:text-base">Generate Waves with AI</span>;
     }
   };
 
   return (
-    <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-white z-[30000] p-4">
-      {/* Main Title - responsive sizing */}
-      <h1 
-        className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-6 sm:mb-8 text-center px-2" 
-        style={{ textShadow: '2px 2px #000' }}
-      >
-        Kingdom Defense: Tower Rush
-      </h1>
-      
-      {/* Fullscreen hint for mobile */}
-      <div className="mb-4 text-center text-xs sm:text-sm opacity-80 max-w-md">
-        <p className="sm:hidden">Tap "Start Game" to enter fullscreen mode</p>
-        <p className="hidden sm:block">Click "Start Game" to begin</p>
+    <div
+      className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center text-white z-[30000] p-4"
+      style={{
+        // FIX: Removed duplicate 'minHeight' property which causes an error in object literals.
+        minHeight: 'var(--doc-height, 100vh)',
+      }}
+    >
+      {/* Game Title */}
+      <div className="text-center mb-6 sm:mb-8">
+        <h1
+          className="text-lg sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl mb-2 px-2 leading-tight"
+          style={{ textShadow: '2px 2px #000' }}
+        >
+          Kingdom Defense
+        </h1>
+        <h2
+          className="text-sm sm:text-lg md:text-xl lg:text-2xl text-yellow-400"
+          style={{ textShadow: '1px 1px #000' }}
+        >
+          Tower Rush
+        </h2>
       </div>
-      
-      {/* Start Game Button */}
+
+      {/* Mobile Instructions */}
+      {showMobileInstructions && (
+        <div className="mb-6 text-center text-xs sm:text-sm opacity-90 max-w-sm bg-gray-800/50 p-3 rounded-lg border border-gray-600">
+          <p className="mb-2">📱 For best experience:</p>
+          <p className="mb-1">• Rotate to landscape mode</p>
+          <p className="mb-1">• Tap "Start Game" for fullscreen</p>
+          <p>• Allow audio when prompted</p>
+        </div>
+      )}
+
+      {/* Start Game Button - Large and touch-friendly */}
       <button
         onClick={onStart}
-        className="text-xl sm:text-2xl md:text-3xl mb-4 px-4 sm:px-6 py-2 sm:py-3 bg-green-600 rounded-lg border border-green-800 hover:bg-green-700 transition-transform transform hover:scale-105 active:scale-95 min-h-[50px] touch-manipulation"
+        className="w-full max-w-xs text-lg sm:text-xl md:text-2xl lg:text-3xl mb-4 px-6 py-4 bg-green-600 rounded-lg border-2 border-green-800 hover:bg-green-700 active:bg-green-800 transition-all transform hover:scale-105 active:scale-95 font-bold shadow-lg min-h-[60px] touch-manipulation"
+        style={{ textShadow: '1px 1px #000' }}
       >
-        Start Game
+        🎮 START GAME
       </button>
-      
+
       {/* AI Wave Generation Button */}
       <button
         onClick={onGenerateWaves}
         disabled={generationStatus === 'GENERATING'}
-        className={`text-sm sm:text-lg md:text-xl px-4 sm:px-6 py-2 sm:py-3 rounded-lg border transition-all flex items-center justify-center min-h-[50px] touch-manipulation
-          ${generationStatus === 'ERROR' ? 'bg-red-600 border-red-800' : 'bg-blue-600 border-blue-800'}
-          ${generationStatus !== 'GENERATING' ? 'hover:bg-blue-700 hover:scale-105 active:scale-95' : ''}
-          ${generationStatus === 'SUCCESS' ? 'bg-green-500 border-green-700' : ''}
-          disabled:grayscale disabled:cursor-not-allowed`}
+        className={`w-full max-w-xs text-sm sm:text-base md:text-lg px-4 py-3 rounded-lg border-2 transition-all flex items-center justify-center min-h-[50px] touch-manipulation shadow-md
+          ${generationStatus === 'ERROR' ? 'bg-red-600 border-red-800 hover:bg-red-700' : 'bg-blue-600 border-blue-800 hover:bg-blue-700'}
+          ${generationStatus !== 'GENERATING' ? 'active:scale-95' : ''}
+          ${generationStatus === 'SUCCESS' ? 'bg-green-500 border-green-700 hover:bg-green-600' : ''}
+          disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none`}
       >
         {getButtonContent()}
       </button>
-      
+
       {/* Status Messages */}
-      {generationStatus === 'SUCCESS' && (
-        <p className="mt-2 text-green-300 text-xs sm:text-sm text-center">New enemy waves are ready!</p>
-      )}
-      {generationStatus === 'ERROR' && (
-        <p className="mt-2 text-red-300 text-xs sm:text-sm text-center">Using default waves.</p>
-      )}
+      <div className="mt-4 text-center min-h-[2rem]">
+        {generationStatus === 'SUCCESS' && (
+          <p className="text-green-300 text-xs sm:text-sm animate-pulse">✨ New enemy waves are ready!</p>
+        )}
+        {generationStatus === 'ERROR' && (
+          <p className="text-red-300 text-xs sm:text-sm">⚠️ Using default waves</p>
+        )}
+      </div>
     </div>
   );
 };
@@ -188,17 +216,6 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      const isFullscreen = document.fullscreenElement !== null;
-      console.log('Fullscreen changed:', isFullscreen);
-      // You could update state here to show fullscreen status
-    };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
-
-  useEffect(() => {
     // Browsers require a user interaction to start the AudioContext.
     // This effect adds a one-time event listener to resume the context on the first click/touch.
     const resumeAudioContext = () => {
@@ -255,7 +272,7 @@ const App: React.FC = () => {
 
   const resetGame = useCallback(() => {
     audioManager.playSound('uiClick');
-    setGameStatus('IDLE');
+    setGameStatus('START_SCREEN');
     setStats({ gold: GAME_CONFIG.startingGold, lives: GAME_CONFIG.startingLives });
     setCurrentWave(0);
     setTowers([]);
@@ -319,40 +336,48 @@ const App: React.FC = () => {
   }, [gameStatus, audioManager]);
 
   const handleEnterGame = useCallback(async () => {
-    // First, try to go fullscreen
-    try {
-      const element = document.documentElement;
-      
-      // Check if fullscreen is supported and request it
-      if (element.requestFullscreen) {
-        await element.requestFullscreen();
-      } else if ((element as any).webkitRequestFullscreen) {
-        await (element as any).webkitRequestFullscreen();
-      } else if ((element as any).msRequestFullscreen) {
-        await (element as any).msRequestFullscreen();
-      }
-      
-      console.log('Fullscreen requested successfully');
-    } catch (err) {
-      console.log('Fullscreen request failed:', err);
-      // Continue anyway - fullscreen is not critical
+    // Mobile-specific fullscreen approach
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+        // For mobile devices, use multiple strategies
+        try {
+            // Strategy 1: Use the global fullscreen function from HTML
+            if (typeof (window as any).attemptFullscreen === 'function') {
+                await (window as any).attemptFullscreen();
+                console.log('Mobile fullscreen attempted via global function');
+            }
+        } catch (err) {
+            console.log('Mobile fullscreen strategies completed with some limitations:', err);
+        }
+    } else {
+        // Desktop fullscreen (more reliable)
+        try {
+            const element = document.documentElement;
+            if (element.requestFullscreen) {
+                await element.requestFullscreen({ navigationUI: "hide" });
+            } else if ((element as any).webkitRequestFullscreen) {
+                await (element as any).webkitRequestFullscreen();
+            } else if ((element as any).msRequestFullscreen) {
+                await (element as any).msRequestFullscreen();
+            }
+            console.log('Desktop fullscreen requested successfully');
+        } catch (err) {
+            console.log('Desktop fullscreen request failed:', err);
+        }
     }
-  
-    // Try to lock orientation to landscape
+
+    // Try orientation lock (works on some mobile browsers)
     try {
-      // FIX: Cast screen.orientation to 'any' to access the experimental 'lock' method.
-      if (screen.orientation && (screen.orientation as any).lock) {
-        await (screen.orientation as any).lock('landscape');
-        console.log('Orientation locked to landscape');
-      } else if ((screen as any).lockOrientation) {
-        (screen as any).lockOrientation('landscape');
-      }
+        // FIX: Cast screen.orientation to `any` to allow access to the experimental `lock` method and resolve TypeScript errors.
+        if (screen.orientation && typeof (screen.orientation as any).lock === 'function') {
+            await (screen.orientation as any).lock('landscape');
+            console.log('Orientation locked to landscape');
+        }
     } catch (err) {
-      console.log('Orientation lock failed:', err);
-      // Continue anyway - orientation lock is not critical
+        console.log('Orientation lock not supported or failed:', err);
     }
-  
-    // Start the game regardless of fullscreen/orientation success
+
+    // Start the game
     audioManager.playMusic();
     setGameStatus('IDLE');
   }, [audioManager]);
