@@ -1,5 +1,3 @@
-
-
 import { Vector2D, TowerType, EnemyType, Wave, ProjectileType, DamageType, ArmorType, EnvironmentDecoration } from './types';
 
 export const GAME_CONFIG = {
@@ -11,8 +9,8 @@ export const GAME_CONFIG = {
   tileWidth: 80,
   tileHeight: 40,
   timeBetweenWaves: 15000, // ms
-  width: 1920,
-  height: 880,
+  width: 2560,
+  height: 1440,
   pathWidth: 60, // The width in pixels for enemies to spread out on the path
 };
 

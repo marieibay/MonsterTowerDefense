@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useCallback, useRef, useMemo, useLayoutEffect } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import { GameBoard } from './components/GameBoard';
@@ -206,7 +205,7 @@ const App: React.FC = () => {
         const { clientWidth, clientHeight } = containerRef.current;
         const scaleX = clientWidth / GAME_CONFIG.width;
         const scaleY = clientHeight / GAME_CONFIG.height;
-        setScale(Math.max(scaleX, scaleY));
+        setScale(Math.min(scaleX, scaleY));
       }
     };
 
@@ -256,19 +255,19 @@ const App: React.FC = () => {
       return closestPoint;
   }, []);
   
-  const deselectAll = () => {
+  const deselectAll = useCallback(() => {
     setSelectedSpot(null);
     setSelectedUnit(null);
     setActiveSpell(null);
     setRallyPointDrag(null);
-  };
+  }, [setActiveSpell, setRallyPointDrag, setSelectedSpot, setSelectedUnit]);
 
   const handleSelectUnit = useCallback((unit: SelectableUnit) => {
     audioManager.playSound('uiClick');
     setSelectedUnit(unit);
     setSelectedSpot(null);
     setActiveSpell(null);
-  }, [audioManager]);
+  }, [audioManager, setActiveSpell, setSelectedSpot, setSelectedUnit]);
 
   const resetGame = useCallback(() => {
     audioManager.playSound('uiClick');
@@ -314,7 +313,7 @@ const App: React.FC = () => {
     audioManager.stopMusic();
     setWaves(WAVES); // Reset to default waves
     setAiWaveGenerationStatus('IDLE');
-  }, [audioManager]);
+  }, [audioManager, setAiWaveGenerationStatus, setCurrentWave, setEnemies, setExplosions, setGameStatus, setGoldParticles, setHero, setIsPaused, setNextWaveTimer, setProjectiles, setRallyPointDrag, setReinforcements, setSelectedSpot, setSelectedUnit, setSoldiers, setSpellCooldowns, setStats, setTowers, setWaves, setActiveSpell]);
   
     useEffect(() => {
     return () => {
@@ -326,14 +325,13 @@ const App: React.FC = () => {
   const startNextWave = useCallback(() => {
     if (gameStatus !== 'IDLE' && gameStatus !== 'WAVE_COMPLETE') return;
     audioManager.playSound('waveStart');
-    if(waveTimerInterval.current) clearInterval(waveTimerInterval.current);
     setNextWaveTimer(0);
     waveSpawnData.current = { spawnIndex: 0, lastSpawnTime: Date.now() };
     setEnemies([]);
     setGameStatus('WAVE_IN_PROGRESS');
     setCurrentWave(prev => prev + 1);
     deselectAll();
-  }, [gameStatus, audioManager]);
+  }, [gameStatus, audioManager, deselectAll, setCurrentWave, setEnemies, setGameStatus, setNextWaveTimer]);
 
   const handleEnterGame = useCallback(async () => {
     // Mobile-specific fullscreen approach
@@ -361,7 +359,8 @@ const App: React.FC = () => {
                 await (element as any).msRequestFullscreen();
             }
             console.log('Desktop fullscreen requested successfully');
-        } catch (err) {
+        } catch (err)
+        {
             console.log('Desktop fullscreen request failed:', err);
         }
     }
@@ -380,7 +379,7 @@ const App: React.FC = () => {
     // Start the game
     audioManager.playMusic();
     setGameStatus('IDLE');
-  }, [audioManager]);
+  }, [audioManager, setGameStatus]);
 
   const generateWavesWithAI = useCallback(async () => {
     setAiWaveGenerationStatus('GENERATING');
@@ -442,7 +441,7 @@ const App: React.FC = () => {
         setAiWaveGenerationStatus('ERROR');
         setWaves(WAVES);
     }
-  }, []);
+  }, [setAiWaveGenerationStatus, setWaves]);
 
   const handleStartWave = useCallback((isEarly: boolean) => {
       if (isEarly) {
@@ -453,7 +452,7 @@ const App: React.FC = () => {
           }));
       }
       startNextWave();
-  }, [startNextWave]);
+  }, [startNextWave, setStats, setSpellCooldowns]);
 
   const handleSpotClick = useCallback((spot: Vector2D) => {
     audioManager.playSound('uiClick');
@@ -465,7 +464,7 @@ const App: React.FC = () => {
       setSelectedUnit(null);
       setActiveSpell(null);
     }
-  }, [towers, handleSelectUnit, audioManager]);
+  }, [towers, handleSelectUnit, audioManager, setSelectedSpot, setSelectedUnit, setActiveSpell]);
 
   const handleBuildTower = useCallback((towerType: TowerType) => {
     if (!selectedSpot) return;
@@ -521,7 +520,7 @@ const App: React.FC = () => {
       setTowers(prev => [...prev, newTower]);
       setSelectedSpot(null);
     }
-  }, [selectedSpot, stats.gold, findClosestPathPoint, audioManager]);
+  }, [selectedSpot, stats.gold, findClosestPathPoint, audioManager, setStats, setTowers, setSoldiers, setSelectedSpot]);
 
    const handleUpgradeTower = useCallback((towerId: number) => {
     setTowers(prev => prev.map(t => {
@@ -549,7 +548,7 @@ const App: React.FC = () => {
         }
         return prev;
     });
-  }, [stats.gold, audioManager, towers]);
+  }, [stats.gold, audioManager, towers, setTowers, setStats, setSelectedUnit]);
 
   const handleSellTower = useCallback((towerId: number) => {
     audioManager.playSound('uiClick');
@@ -567,7 +566,7 @@ const App: React.FC = () => {
     
     setSelectedUnit(null);
     setSelectedSpot(towerPosition);
-  }, [towers, audioManager]);
+  }, [towers, audioManager, setStats, setTowers, setSoldiers, setSelectedUnit, setSelectedSpot]);
   
   const handleCastSpell = useCallback((spell: PlayerSpell) => {
       if (spellCooldowns[spell] <= 0) {
@@ -576,7 +575,7 @@ const App: React.FC = () => {
           setSelectedUnit(null);
           setSelectedSpot(null);
       }
-  }, [spellCooldowns, audioManager]);
+  }, [spellCooldowns, audioManager, setActiveSpell, setSelectedUnit, setSelectedSpot]);
 
   const handleHeroAbility = useCallback(() => {
     setHero(h => {
@@ -596,7 +595,7 @@ const App: React.FC = () => {
         }
         return h;
     });
-  }, [audioManager]);
+  }, [audioManager, setHero, setEnemies]);
 
   const handleSetRallyPoint = useCallback((unitId: number, screenPos: Vector2D) => {
       if (hero.id === unitId) {
@@ -640,7 +639,7 @@ const App: React.FC = () => {
               });
           });
       }
-  }, [hero.id, towers]);
+  }, [hero.id, towers, setHero, setTowers, setSoldiers]);
 
   const getGameCoordinates = useCallback((e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>): Vector2D => {
       const rect = e.currentTarget.getBoundingClientRect();
@@ -682,7 +681,7 @@ const App: React.FC = () => {
     } else {
       deselectAll();
     }
-  }, [activeSpell, selectedUnit, getGameCoordinates]);
+  }, [activeSpell, selectedUnit, getGameCoordinates, setRallyPointDrag, deselectAll]);
 
   const handleMapInteractionMove = useCallback((e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
       e.preventDefault();
@@ -690,7 +689,7 @@ const App: React.FC = () => {
       if (rallyPointDrag) {
           setRallyPointDrag(prev => prev ? { ...prev, currentPosition: screenPos } : null);
       }
-  }, [rallyPointDrag, getGameCoordinates]);
+  }, [rallyPointDrag, getGameCoordinates, setRallyPointDrag]);
 
   const handleMapInteractionEnd = useCallback((e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
       e.preventDefault();
@@ -751,13 +750,13 @@ const App: React.FC = () => {
       } else if (!selectedUnit && !selectedSpot) {
           deselectAll();
       }
-  }, [rallyPointDrag, activeSpell, handleSetRallyPoint, selectedUnit, selectedSpot, audioManager, getGameCoordinates]);
+  }, [rallyPointDrag, activeSpell, handleSetRallyPoint, selectedUnit, selectedSpot, audioManager, getGameCoordinates, setReinforcements, setSpellCooldowns, setActiveSpell, setExplosions, setEnemies, setRallyPointDrag, setSelectedUnit, deselectAll]);
 
   const cancelRallyPointDrag = useCallback(() => {
     setRallyPointDrag(null);
-  }, []);
+  }, [setRallyPointDrag]);
   
-  const setAttackingState = (unitId: number | string, duration: number) => {
+  const setAttackingState = useCallback((unitId: number | string, duration: number) => {
      const timerKey = `${unitId}`;
      const existingTimer = animationTimers.current.get(timerKey);
      if(existingTimer) clearTimeout(existingTimer);
@@ -783,7 +782,7 @@ const App: React.FC = () => {
          animationTimers.current.delete(timerKey);
      }, duration);
      animationTimers.current.set(timerKey, newTimer);
-  };
+  }, [hero.id, reinforcements, setHero, setReinforcements, setSoldiers, setTowers]);
 
   useEffect(() => {
     if ((gameStatus !== 'WAVE_IN_PROGRESS' && gameStatus !== 'WAVE_COMPLETE') || isPaused) return;
@@ -877,28 +876,7 @@ const App: React.FC = () => {
           : HERO_STATS.armorValue;
       currentHero.armorValue = Math.min(0.9, currentArmorValue);
 
-      if (currentHero.animationState === 'die') {
-        if (currentHero.deathAnimTimer && currentHero.deathAnimTimer > 0) {
-            const newTimer = currentHero.deathAnimTimer - msPerFrame;
-            if (newTimer <= 0) {
-                currentHero.respawnTimer = HERO_STATS.respawnTime;
-                currentHero.deathAnimTimer = undefined;
-            } else {
-                currentHero.deathAnimTimer = newTimer;
-            }
-        }
-      }
-      else if (currentHero.respawnTimer > 0) {
-        currentHero.respawnTimer = Math.max(0, currentHero.respawnTimer - msPerFrame);
-        if (currentHero.respawnTimer <= 0) {
-            currentHero.health = currentHero.maxHealth;
-            const respawnPosition = currentHero.deathPosition || gameToScreen(HERO_START_GRID_POS);
-            currentHero.position = respawnPosition;
-            currentHero.rallyPoint = respawnPosition;
-            currentHero.animationState = 'idle';
-            currentHero.deathPosition = undefined;
-        }
-    } else if (currentHero.health > 0) {
+      if (currentHero.health > 0) {
         // Health Regeneration
         if (currentHero.health < currentHero.maxHealth) {
             if (now - (currentHero.timeSinceCombat || 0) > HERO_STATS.healthRegenDelay) {
@@ -960,43 +938,91 @@ const App: React.FC = () => {
             else {
                 currentHero.animationState = 'walk';
                 const moveDistance = HERO_STATS.speed * timeDelta;
-                const direction = { x: targetEnemy.position.x - currentHero.position.x, y: targetEnemy.position.y - currentHero.position.y };
-                currentHero.direction = direction.x >= 0 ? 'right' : 'left';
-                const normalizedDir = { x: direction.x / distanceToTarget, y: direction.y / distanceToTarget };
-                currentHero.position.x += normalizedDir.x * moveDistance;
-                currentHero.position.y += normalizedDir.y * moveDistance;
-            }
-        } 
-        else { // No enemy, patrol
-            if (newHeroPatrolTarget) {
-                const distanceToTarget = getDistance(currentHero.position, newHeroPatrolTarget);
-                if (distanceToTarget < 10) {
-                    newHeroPatrolTarget = undefined;
-                    newIdleTimer = 1000 + Math.random() * 2000;
-                    currentHero.animationState = 'idle';
-                } else {
-                    currentHero.animationState = 'walk';
-                    const moveDistance = HERO_STATS.speed * timeDelta;
-                    const direction = { x: newHeroPatrolTarget.x - currentHero.position.x, y: newHeroPatrolTarget.y - currentHero.position.y };
+                if (distanceToTarget > 0) {
+                    const direction = { x: targetEnemy.position.x - currentHero.position.x, y: targetEnemy.position.y - currentHero.position.y };
                     currentHero.direction = direction.x >= 0 ? 'right' : 'left';
                     const normalizedDir = { x: direction.x / distanceToTarget, y: direction.y / distanceToTarget };
                     currentHero.position.x += normalizedDir.x * moveDistance;
                     currentHero.position.y += normalizedDir.y * moveDistance;
                 }
-            } else if (newIdleTimer <= 0) {
-                const angle = Math.random() * 2 * Math.PI;
-                const radius = Math.random() * HERO_STATS.patrolRadius;
-                newHeroPatrolTarget = {
-                    x: currentHero.rallyPoint.x + Math.cos(angle) * radius,
-                    y: currentHero.rallyPoint.y + Math.sin(angle) * radius,
-                };
-            } else {
-                currentHero.animationState = 'idle';
+            }
+        } 
+        else { // No enemy, move to rally point or patrol
+            const distanceToRallyPoint = getDistance(currentHero.position, currentHero.rallyPoint);
+    
+            if (distanceToRallyPoint > 15) { // If hero is far from rally point, move towards it.
+                currentHero.animationState = 'walk';
+                const moveDistance = HERO_STATS.speed * timeDelta;
+                if (distanceToRallyPoint > 0) {
+                    const direction = { x: currentHero.rallyPoint.x - currentHero.position.x, y: currentHero.rallyPoint.y - currentHero.position.y };
+                    currentHero.direction = direction.x >= 0 ? 'right' : 'left';
+                    const normalizedDir = { x: direction.x / distanceToRallyPoint, y: direction.y / distanceToRallyPoint };
+                    currentHero.position.x += normalizedDir.x * moveDistance;
+                    currentHero.position.y += normalizedDir.y * moveDistance;
+                }
+                newHeroPatrolTarget = undefined; // Cancel any patrol while moving to rally point
+            } else { // Hero is at the rally point, start patrolling
+                if (newHeroPatrolTarget) {
+                    const distanceToTarget = getDistance(currentHero.position, newHeroPatrolTarget);
+                    if (distanceToTarget < 10) {
+                        newHeroPatrolTarget = undefined;
+                        newIdleTimer = 1000 + Math.random() * 2000;
+                        currentHero.animationState = 'idle';
+                    } else {
+                        currentHero.animationState = 'walk';
+                        const moveDistance = HERO_STATS.speed * timeDelta;
+                        if (distanceToTarget > 0) {
+                            const direction = { x: newHeroPatrolTarget.x - currentHero.position.x, y: newHeroPatrolTarget.y - currentHero.position.y };
+                            currentHero.direction = direction.x >= 0 ? 'right' : 'left';
+                            const normalizedDir = { x: direction.x / distanceToTarget, y: direction.y / distanceToTarget };
+                            currentHero.position.x += normalizedDir.x * moveDistance;
+                            currentHero.position.y += normalizedDir.y * moveDistance;
+                        }
+                    }
+                } else if (newIdleTimer <= 0) {
+                    const angle = Math.random() * 2 * Math.PI;
+                    const radius = Math.random() * HERO_STATS.patrolRadius;
+                    newHeroPatrolTarget = {
+                        x: currentHero.rallyPoint.x + Math.cos(angle) * radius,
+                        y: currentHero.rallyPoint.y + Math.sin(angle) * radius,
+                    };
+                } else {
+                    currentHero.animationState = 'idle';
+                }
             }
         }
         currentHero.targetId = newHeroTargetId;
         currentHero.patrolTarget = newHeroPatrolTarget;
         currentHero.idleTimer = newIdleTimer;
+    } else { // Hero is dead or dying
+        if (currentHero.respawnTimer > 0) {
+            // State: DEAD_WAITING_FOR_RESPAWN
+            currentHero.respawnTimer = Math.max(0, currentHero.respawnTimer - msPerFrame);
+            if (currentHero.respawnTimer <= 0) {
+                // Respawn!
+                currentHero.health = currentHero.maxHealth;
+                const respawnPosition = currentHero.deathPosition || gameToScreen(HERO_START_GRID_POS);
+                currentHero.position = respawnPosition;
+                currentHero.rallyPoint = respawnPosition;
+                currentHero.animationState = 'idle';
+                currentHero.deathPosition = undefined;
+            }
+        } else if (currentHero.animationState === 'die') {
+            // State: DYING_ANIMATION
+            if (currentHero.deathAnimTimer && currentHero.deathAnimTimer > 0) {
+                const newTimer = currentHero.deathAnimTimer - msPerFrame;
+                if (newTimer <= 0) {
+                    currentHero.respawnTimer = HERO_STATS.respawnTime;
+                    currentHero.deathAnimTimer = undefined;
+                } else {
+                    currentHero.deathAnimTimer = newTimer;
+                }
+            } else {
+                // Fallback for a stuck state, though it shouldn't happen with correct death logic.
+                currentHero.respawnTimer = HERO_STATS.respawnTime;
+                currentHero.deathAnimTimer = undefined;
+            }
+        }
     }
 
       currentTowers = currentTowers.map(tower => {
@@ -1152,11 +1178,13 @@ const App: React.FC = () => {
              } else {
                  newAnimationState = 'walk';
                  const moveDistance = SOLDIER_STATS.speed * timeDelta;
-                 const directionVec = { x: targetEnemy.position.x - soldier.position.x, y: targetEnemy.position.y - soldier.position.y };
-                 newDirection = directionVec.x >= 0 ? 'right' : 'left';
-                 const normalizedDir = { x: directionVec.x / distanceToTarget, y: directionVec.y / distanceToTarget };
-                 soldier.position.x += normalizedDir.x * moveDistance;
-                 soldier.position.y += normalizedDir.y * moveDistance;
+                 if (distanceToTarget > 0) {
+                    const directionVec = { x: targetEnemy.position.x - soldier.position.x, y: targetEnemy.position.y - soldier.position.y };
+                    newDirection = directionVec.x >= 0 ? 'right' : 'left';
+                    const normalizedDir = { x: directionVec.x / distanceToTarget, y: directionVec.y / distanceToTarget };
+                    soldier.position.x += normalizedDir.x * moveDistance;
+                    soldier.position.y += normalizedDir.y * moveDistance;
+                 }
              }
         } else {
              if (newPatrolTarget) {
@@ -1168,11 +1196,13 @@ const App: React.FC = () => {
                 } else {
                     newAnimationState = 'walk';
                     const moveDistance = SOLDIER_STATS.speed * timeDelta;
-                    const directionVec = { x: newPatrolTarget.x - soldier.position.x, y: newPatrolTarget.y - soldier.position.y };
-                    newDirection = directionVec.x >= 0 ? 'right' : 'left';
-                    const normalizedDir = { x: directionVec.x / distanceToTarget, y: directionVec.y / distanceToTarget };
-                    soldier.position.x += normalizedDir.x * moveDistance;
-                    soldier.position.y += normalizedDir.y * moveDistance;
+                    if (distanceToTarget > 0) {
+                        const directionVec = { x: newPatrolTarget.x - soldier.position.x, y: newPatrolTarget.y - soldier.position.y };
+                        newDirection = directionVec.x >= 0 ? 'right' : 'left';
+                        const normalizedDir = { x: directionVec.x / distanceToTarget, y: directionVec.y / distanceToTarget };
+                        soldier.position.x += normalizedDir.x * moveDistance;
+                        soldier.position.y += normalizedDir.y * moveDistance;
+                    }
                 }
             } else if (newIdleTimer <= 0) {
               const angle = Math.random() * 2 * Math.PI;
@@ -1231,22 +1261,26 @@ const App: React.FC = () => {
             } else {
                 newAnimationState = 'walk';
                 const moveDistance = r.speed * timeDelta;
-                const directionVec = { x: targetEnemy.position.x - r.position.x, y: targetEnemy.position.y - r.position.y };
-                newDirection = directionVec.x >= 0 ? 'right' : 'left';
-                const normalizedDir = { x: directionVec.x / distanceToTarget, y: directionVec.y / distanceToTarget };
-                r.position.x += normalizedDir.x * moveDistance;
-                r.position.y += normalizedDir.y * moveDistance;
+                if (distanceToTarget > 0) {
+                    const directionVec = { x: targetEnemy.position.x - r.position.x, y: targetEnemy.position.y - r.position.y };
+                    newDirection = directionVec.x >= 0 ? 'right' : 'left';
+                    const normalizedDir = { x: directionVec.x / distanceToTarget, y: directionVec.y / distanceToTarget };
+                    r.position.x += normalizedDir.x * moveDistance;
+                    r.position.y += normalizedDir.y * moveDistance;
+                }
             }
         } else {
             const distanceToDestination = getDistance(r.position, r.destination);
             if (distanceToDestination > 10) {
                 newAnimationState = 'walk';
                 const moveDistance = r.speed * timeDelta;
-                const directionVec = { x: r.destination.x - r.position.x, y: r.destination.y - r.position.y };
-                newDirection = directionVec.x >= 0 ? 'right' : 'left';
-                const normalizedDir = { x: directionVec.x / distanceToDestination, y: directionVec.y / distanceToDestination };
-                r.position.x += normalizedDir.x * moveDistance;
-                r.position.y += normalizedDir.y * moveDistance;
+                if (distanceToDestination > 0) {
+                    const directionVec = { x: r.destination.x - r.position.x, y: r.destination.y - r.position.y };
+                    newDirection = directionVec.x >= 0 ? 'right' : 'left';
+                    const normalizedDir = { x: directionVec.x / distanceToDestination, y: directionVec.y / distanceToDestination };
+                    r.position.x += normalizedDir.x * moveDistance;
+                    r.position.y += normalizedDir.y * moveDistance;
+                }
             } else {
                 newAnimationState = 'idle';
             }
@@ -1422,10 +1456,12 @@ const App: React.FC = () => {
         if (enemy.tauntedBy === currentHero.id && currentHero.health > 0) {
             const distToTaunter = getDistance(enemy.position, currentHero.position);
             const moveDistance = enemy.speed * timeDelta;
-            const direction = { x: currentHero.position.x - enemy.position.x, y: currentHero.position.y - enemy.position.y };
-            const normalizedDir = { x: direction.x / distToTaunter, y: direction.y / distToTaunter };
-            const newPos = {x: enemy.position.x + normalizedDir.x * moveDistance, y: enemy.position.y + normalizedDir.y * moveDistance};
-            return { ...enemy, position: newPos, animationState: newAnimationState };
+            if (distToTaunter > 0) {
+                const direction = { x: currentHero.position.x - enemy.position.x, y: currentHero.position.y - enemy.position.y };
+                const normalizedDir = { x: direction.x / distToTaunter, y: direction.y / distToTaunter };
+                const newPos = {x: enemy.position.x + normalizedDir.x * moveDistance, y: enemy.position.y + normalizedDir.y * moveDistance};
+                return { ...enemy, position: newPos, animationState: newAnimationState };
+            }
         }
 
         const newSlowTimer = Math.max(0, enemy.slowTimer - msPerFrame);
@@ -1456,10 +1492,12 @@ const App: React.FC = () => {
                     newPosition = { x: nextPathNodeScreen.x + normalizedDir.x * remainingDistance, y: nextPathNodeScreen.y + normalizedDir.y * remainingDistance };
                }
           } else {
-              const direction = { x: nextPathNodeScreen.x - newPosition.x, y: nextPathNodeScreen.y - newPosition.y };
-              const normalizedDir = { x: direction.x / distanceToNextNode, y: direction.y / distanceToNextNode };
-              newPosition.x += normalizedDir.x * distanceToTravel;
-              newPosition.y += normalizedDir.y * distanceToTravel;
+              if (distanceToNextNode > 0) {
+                  const direction = { x: nextPathNodeScreen.x - newPosition.x, y: nextPathNodeScreen.y - newPosition.y };
+                  const normalizedDir = { x: direction.x / distanceToNextNode, y: direction.y / distanceToNextNode };
+                  newPosition.x += normalizedDir.x * distanceToTravel;
+                  newPosition.y += normalizedDir.y * distanceToTravel;
+              }
           }
         } else {
            enemiesWhoReachedEnd.push(enemy.id.toString());
@@ -1499,9 +1537,10 @@ const App: React.FC = () => {
         let updatedUnit: SelectableUnit | null = null;
         if ('level' in selectedUnit) {
             updatedUnit = currentTowers.find(t => t.id === selectedUnit.id) || null;
-            if (updatedUnit && selectedUnit.type === 'NORTHERN_BARRACKS') {
+            if (updatedUnit && 'level' in updatedUnit && selectedUnit.type === 'NORTHERN_BARRACKS') {
                 const freshTower = towers.find(t => t.id === selectedUnit.id);
-                if (freshTower) updatedUnit.rallyPoint = freshTower.rallyPoint;
+                // FIX: Added type assertion to fix TypeScript error
+                if (freshTower) (updatedUnit as Tower).rallyPoint = freshTower.rallyPoint;
             }
         }
         else if ('barracksId' in selectedUnit) updatedUnit = currentSoldiers.find(s => s.id === selectedUnit.id) || null;
@@ -1525,23 +1564,27 @@ const App: React.FC = () => {
          } else {
              setGameStatus('WAVE_COMPLETE');
              setNextWaveTimer(GAME_CONFIG.timeBetweenWaves);
-             if(waveTimerInterval.current) clearInterval(waveTimerInterval.current);
-             waveTimerInterval.current = setInterval(() => {
-                 setNextWaveTimer(t => {
-                     if (t <= 1000) {
-                         startNextWave();
-                         return 0;
-                     }
-                     return t - 1000;
-                 })
-             }, 1000);
          }
       }
 
     }, 1000 / GAME_CONFIG.fps);
 
     return () => clearInterval(intervalId);
-  }, [gameStatus, isPaused, currentWave, enemies, towers, projectiles, soldiers, hero, reinforcements, audioManager, selectedUnit, startNextWave, waves]);
+  }, [gameStatus, isPaused, currentWave, enemies, towers, projectiles, soldiers, hero, reinforcements, audioManager, selectedUnit, startNextWave, waves, setAttackingState, setEnemies, setExplosions, setGameStatus, setGoldParticles, setHero, setNextWaveTimer, setProjectiles, setReinforcements, setSelectedUnit, setSoldiers, setSpellCooldowns, setStats, setTowers]);
+
+  // This effect manages the countdown timer between waves.
+  useEffect(() => {
+    if (gameStatus === 'WAVE_COMPLETE' && !isPaused && nextWaveTimer > 0) {
+      const timerId = setTimeout(() => {
+        setNextWaveTimer(t => Math.max(0, t - 1000));
+      }, 1000);
+      return () => clearTimeout(timerId);
+    } else if (gameStatus === 'WAVE_COMPLETE' && !isPaused && nextWaveTimer <= 0) {
+      // Timer finished, start the next wave automatically.
+      // We pass `false` to handleStartWave because it's not an "early" start.
+      handleStartWave(false);
+    }
+  }, [gameStatus, isPaused, nextWaveTimer, handleStartWave]);
 
   const selectedTower = useMemo(() => {
     if (selectedUnit && 'level' in selectedUnit) {

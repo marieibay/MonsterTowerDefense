@@ -1,4 +1,3 @@
-
 import type { Vector2D } from './types';
 import { GAME_CONFIG } from './constants';
 
@@ -10,9 +9,14 @@ export const getDistance = (p1: Vector2D, p2: Vector2D): number => {
 
 // Converts grid coordinates to screen pixel coordinates for isometric view
 export const gameToScreen = (gridPos: Vector2D): Vector2D => {
-    const screenX = (gridPos.x - gridPos.y) * (GAME_CONFIG.tileWidth / 2) + (GAME_CONFIG.width / 2) - GAME_CONFIG.tileWidth / 2;
-    const screenY = (gridPos.x + gridPos.y) * (GAME_CONFIG.tileHeight / 2);
-    return { x: screenX, y: screenY };
+    const rawScreenX = (gridPos.x - gridPos.y) * (GAME_CONFIG.tileWidth / 2);
+    const rawScreenY = (gridPos.x + gridPos.y) * (GAME_CONFIG.tileHeight / 2);
+
+    // These offsets are calculated to center the game's content within the new, larger canvas size.
+    const xOffset = 1220; 
+    const yOffset = 160;
+
+    return { x: rawScreenX + xOffset, y: rawScreenY + yOffset };
 }
 
 
