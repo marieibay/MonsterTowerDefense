@@ -3,93 +3,111 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <!-- Optimized viewport for mobile gaming -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover" />
+    <!-- Prevent address bar from showing on mobile -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
     <title>Kingdom Defense: Tower Rush</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.1.1/",
-    "react": "https://esm.sh/react@^19.1.1",
-    "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.19.0"
-  }
-}
-</script>
-<style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      font-family: 'Press Start 2P', cursive;
-      background-color: black;
+    
+    <script type="importmap">
+    {
+      "imports": {
+        "react/": "https://esm.sh/react@^19.1.1/",
+        "react": "https://esm.sh/react@^19.1.1",
+        "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
+        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.19.0"
+      }
     }
-    #root {
-      width: 100%;
-      height: 100%;
-    }
-    body {
-      image-rendering: pixelated;
-      image-rendering: -moz-crisp-edges;
-      image-rendering: crisp-edges;
-      touch-action: none;
-    }
-
-    #rotate-device-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: black;
-      color: white;
-      display: none; /* Hidden by default */
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      font-size: 1.5rem;
-      padding: 1rem;
-      z-index: 9999;
-    }
-
-    /* Show overlay and hide game only on touch devices in portrait mode */
-    @media (pointer: coarse) and (orientation: portrait) {
+    </script>
+    
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: 'Press Start 2P', cursive;
+        background-color: black;
+        /* Prevent scrolling on mobile */
+        position: fixed;
+        overscroll-behavior: none;
+      }
+      
       #root {
-        display: none;
+        width: 100%;
+        height: 100%;
       }
-      #rotate-device-overlay {
-        display: flex;
+      
+      body {
+        image-rendering: pixelated;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: crisp-edges;
+        touch-action: none;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: transparent;
       }
-    }
-</style>
-</head>
+      
+      /* Landscape orientation suggestion (not hiding content) */
+      .landscape-hint {
+        position: fixed;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-size: 12px;
+        z-index: 10000;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+      
+      /* Show hint only on very narrow screens (likely portrait mobile) */
+      @media (max-width: 600px) and (max-height: 900px) and (orientation: portrait) {
+        .landscape-hint {
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
   <body class="bg-black">
-    <div id="rotate-device-overlay">
-      <p>Please rotate your device to landscape mode to play.</p>
+    <div class="landscape-hint">
+      ↻ Rotate for better experience
     </div>
     <div id="root"></div>
     <audio id="bg-music" src="https://storage.googleapis.com/lev-public-files/medieval-lute.mp3" loop></audio>
     <script type="module" src="/index.tsx"></script>
     <script>
-      // Prevent zoom on double tap (especially for older iOS)
+      // Prevent zoom on double tap
       let lastTouchEnd = 0;
       document.addEventListener('touchend', function (event) {
-          const now = (new Date()).getTime();
-          if (now - lastTouchEnd <= 300) {
-              event.preventDefault();
-          }
-          lastTouchEnd = now;
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+          event.preventDefault();
+        }
+        lastTouchEnd = now;
       }, { passive: false });
-
+      
       // Prevent context menu on long press
       document.addEventListener('contextmenu', function(e) {
         e.preventDefault();
       });
+      
+      // Prevent scrolling
+      document.addEventListener('touchmove', function(e) {
+        e.preventDefault();
+      }, { passive: false });
     </script>
   </body>
 </html>
