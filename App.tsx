@@ -997,19 +997,24 @@ const App: React.FC = () => {
     } else { // Hero is dead or dying
         if (currentHero.respawnTimer > 0) {
             // State: DEAD_WAITING_FOR_RESPAWN
-            currentHero.respawnTimer = Math.max(0, currentHero.respawnTimer - msPerFrame);
-            if (currentHero.respawnTimer <= 0) {
+            const newRespawnTimer = Math.max(0, currentHero.respawnTimer - msPerFrame);
+            if (newRespawnTimer <= 0) {
                 // Respawn!
-                currentHero.health = currentHero.maxHealth;
+                currentHero.health = HERO_STATS.health;
                 const respawnPosition = currentHero.deathPosition || gameToScreen(HERO_START_GRID_POS);
                 currentHero.position = respawnPosition;
                 currentHero.rallyPoint = respawnPosition;
                 currentHero.animationState = 'idle';
+                currentHero.targetId = null;
                 currentHero.deathPosition = undefined;
+                currentHero.deathAnimTimer = undefined;
+                currentHero.respawnTimer = 0;
+            } else {
+                currentHero.respawnTimer = newRespawnTimer;
             }
         } else if (currentHero.animationState === 'die') {
             // State: DYING_ANIMATION
-            if (currentHero.deathAnimTimer && currentHero.deathAnimTimer > 0) {
+            if (currentHero.deathAnimTimer !== undefined && currentHero.deathAnimTimer > 0) {
                 const newTimer = currentHero.deathAnimTimer - msPerFrame;
                 if (newTimer <= 0) {
                     currentHero.respawnTimer = HERO_STATS.respawnTime;
@@ -1437,6 +1442,7 @@ const App: React.FC = () => {
                             currentHero.animationState = 'die';
                             currentHero.deathPosition = { ...currentHero.position };
                             currentHero.deathAnimTimer = 600;
+                            currentHero.targetId = null;
                             audioManager.playSound('enemyDeath'); // a hero death sound
                         }
                      }
